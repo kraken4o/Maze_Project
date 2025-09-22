@@ -36,7 +36,7 @@ userSaveName = input("what is your save file name: ").lower()
 for i in pauseFile.readlines():
     if i.startwith("name: "):
         if i[5:] == userSaveName:
-
+            print()
 
 
 
