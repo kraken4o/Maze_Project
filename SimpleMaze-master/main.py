@@ -6,7 +6,7 @@
 # Date: July 2025
 # -----------------------------------------------------------------------------
 
-from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterteacher_room_maze
+from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterteacher_room_maze, enterStorageroom
 
 print("****************************************************************************")
 print("*                      Welcome to the School Maze!                         *")
@@ -24,6 +24,7 @@ state = {
         "equinoxroom": False,
         "classroom2031": False,
         "teacher_room_maze": False,
+        "storageroom": False,
     },
     "inventory": []
 }
@@ -48,8 +49,12 @@ while True:
     
     elif current=="classroom2031":
         state["current_room"]=enterClassroom2031(state)
+
     elif current=="teacher_room_maze":
         state["current_room"]=enterteacher_room_maze(state)
+
+    elif current=="storageroom":
+        state["current_room"]=enterStorageroom(state)
 
     else:
         print("Unknown room. Exiting game.")

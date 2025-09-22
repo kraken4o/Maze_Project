@@ -14,4 +14,5 @@ from .equinoxroom import enterEquinoxroom
 from .classroom2031 import enterClassroom2031
 from .utils import chooseNextRoom
 from .teacher_room_maze import enterteacher_room_maze
+from .storageroom import enterStorageroom
 
