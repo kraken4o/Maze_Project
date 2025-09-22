@@ -15,7 +15,7 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 
-state = {
+"""state = {
     "current_room": "corridor",
     "previous_room": "corridor",
     "visited": {
@@ -27,7 +27,21 @@ state = {
         "storageroom": False,
     },
     "inventory": []
-}
+}"""
+
+state = {}
+pauseFile = open("rooms/pauseState.txt", "r+", encoding="utf-8")
+userSaveName = input("what is your save file name: ").lower()
+
+for i in pauseFile.readlines():
+    if i.startwith("name: "):
+        if i[5:] == userSaveName:
+
+
+
+
+
+
 
 while True:
     current = state["current_room"]

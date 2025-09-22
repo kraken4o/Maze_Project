@@ -1,0 +1,2 @@
+name: person
+state: {"current_room": "corridor", "previous_room": "corridor","visited": {"classroom2015": False,"projectroom3": False, "equinoxroom": False,"classroom2031": False,"teacher_room_maze": False,"storageroom": False, },"inventory": [] }
