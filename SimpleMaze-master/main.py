@@ -23,6 +23,7 @@ state = {
         "projectroom3": False,
         "equinoxroom": False,
         "classroom2031": False,
+        "teacher_room_maze": False,
     },
     "inventory": []
 }
