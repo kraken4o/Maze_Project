@@ -9,7 +9,7 @@
 import sys
 from .utils import chooseNextRoom
 
-def enterteacher_room_maze\(state):
+def enterteacher_room_maze(state):
     print("\n🏫 You step into Teacher Room")
     print("The room is empty with only clues in different places")
 
