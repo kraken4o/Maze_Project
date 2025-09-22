@@ -2,6 +2,17 @@ import sys
 
 def enterClassroom2031(state):
 
+
+    # --- Check if the player has the key to enter ---
+    if not state["visited"]["classroom2031"]:
+        if "class key" not in state["inventory"]:
+            print("\n🚪 The door to class room 2031 is locked.")
+            print("You jiggle the handle. It's no use.")
+            print("🔐 You need a key. Perhaps it's hidden elsewhere in the school?")
+            return "corridor"
+        else:
+            print("\n🗝️ You insert the brass key into the lock and turn it with a satisfying click.")
+
     # narration when the user enters the room
     print("\n You step into classroom 2.031.")
     print("As you step in the door closes shut and the door has a small keypad above the handle.")
@@ -31,7 +42,7 @@ def enterClassroom2031(state):
         else:
             print("you see an empty room with a rotating table")
             # checks if the key hasn't been picked up yet
-            if "otherkey" not in state["inventory"]:
+            if "equinox key" not in state["inventory"]:
                 print("In the middle of the table a key has appeared. This could possibly be used for later use.")
             else:
                 print("there is nothing more to see in this room")
@@ -43,22 +54,22 @@ def enterClassroom2031(state):
         print("- look around         : Examine the room and its contents.")
         if not state["visited"]["classroom2031"]:
             print("- answer <answer>     : Attempt to solve the logic puzzle")
-        if state["visited"]["classroom2031"] and "otherkey" not in state["inventory"]:
-            print("- take otherkey            : Pick up the otherkey once it's revealed.")
+        if state["visited"]["classroom2031"] and "equinox key" not in state["inventory"]:
+            print("- take equinox key            : Pick up the equinox key once it's revealed.")
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
 
     def handle_take(item):
-        if item == "otherkey":
+        if item == "equinox key":
             if not state["visited"]["classroom2031"]:
                 print("❌ There's no key visible yet. Maybe solving the puzzle will reveal more.")
-            elif "otherkey" in state["inventory"]:
-                print("You already have the otherkey in your backpack.")
+            elif "equinox key" in state["inventory"]:
+                print("You already have the equinox key in your backpack.")
             else:
-                print("🔑 you reach over the table and grab the otherkey")
+                print("🔑 you reach over the table and grab the equinox key")
                 print("and tuck it safely into your backpack.")
-                state["inventory"].append("otherkey")
+                state["inventory"].append("equinox key")
         else:
             print(f"There is no '{item}' here to take.")
 
