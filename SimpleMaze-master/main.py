@@ -7,7 +7,6 @@
 # -----------------------------------------------------------------------------
 
 from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterteacher_room_maze, enterStorageroom
-import time
 
 print("****************************************************************************")
 print("*                      Welcome to the School Maze!                         *")
@@ -16,7 +15,7 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 
-"""state = {
+state = {
     "current_room": "corridor",
     "previous_room": "corridor",
     "visited": {
@@ -28,22 +27,9 @@ print("*************************************************************************
         "storageroom": False,
     },
     "inventory": []
-}"""
-
-state = {}
-saveTime = 0.0
-startTime = time.time()
-pauseFile = open("SimpleMaze-master/rooms/pauseState.txt", "r+", encoding="utf-8")
-userSaveName = input("what is your save file name, type no save if you want to start a new game: ").lower()
+}
 
 
-for i in pauseFile: # iterates through each line in the txt file
-    if i.startswith("name: "): # looks for the file name
-        if i[5:].strip() == userSaveName: # if the user has written their file name
-            state = eval(pauseFile.readline()[6:]) # converts string into dictionary
-            print(state)
-            saveTime  = float(pauseFile.readline()[5:]) # converts string into float
-            print(saveTime)
 
 
 
