@@ -5,6 +5,7 @@
 # Location: Delft
 # Date: July 2025
 # -----------------------------------------------------------------------------
+import sqlite3
 
 from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterteacher_room_maze, enterStorageroom
 
@@ -29,6 +30,17 @@ state = {
     "inventory": []
 }
 
+connection = sqlite3.connect("GameSave.db")
+crsr = connection.cursor()
+fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ")
+
+sqlCommand = """SELECT SaveName, State,Time
+FROM Save
+             WHERE SaveName = fileName"""
+
+crsr.execute(sqlCommand)
+
+fetchesData = crsr.fetchall()
 
 
 
