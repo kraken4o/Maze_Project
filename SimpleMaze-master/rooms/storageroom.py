@@ -42,7 +42,7 @@ def enterStorageroom(state):
         else:
             print("The shining suitcase has already been opened, you already solved the riddle!")
             if "teacher_key" not in state["inventory"]:
-                print("The suitcase opens up surprisingly slow, what is it? Its a key!")
+                print("The suitcase has been opened, what is it? Take a look whats inside!")
             else:
                 print("Youve already taken the teachers key!")
         print("- Possible exits: corridor")
