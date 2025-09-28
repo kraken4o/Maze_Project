@@ -12,11 +12,11 @@ from .utils import chooseNextRoom
 def enterStorageroom(state):
 
     if not state["visited"]["storageroom"]:
-        # Message if you dont have the key for your room
-        if "key" not in state["inventory"]:
+        # Message if you dont have the storage key for your room
+        if "storage_key" not in state["inventory"]:
             print("\n🚪 The door to the Storage room is locked.")
             print("You rattle the rusty handle and shove your shoulder against it, but it doesn’t move an inch.")
-            print("🔐 A key is needed… maybe it’s lying around somewhere in the school.")
+            print("🔐 A storage key is needed… maybe it’s lying around somewhere in the school.")
             return "corridor"
         #Message if you do have the key to enter
         else:

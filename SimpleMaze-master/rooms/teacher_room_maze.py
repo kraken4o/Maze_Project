@@ -61,4 +61,41 @@ def enterteacher_room_maze(state):
         elif answer == "20":
             print("✅ Correct! You can now go to the next room.")
             state["visited"]["teacherroom"] = True
+        else:
+            print("Incorrect")
+            return "corridor"
 
+
+
+    # --- Commandoloop ---
+    while True:
+        command = input("\n> ").strip().lower()
+
+        if command == "look around":
+            handle_look()
+
+        elif command == "?":
+            handle_help()
+
+        elif command.startswith("take "):
+            item = command[5:].strip()
+            handle_take(item)
+
+        elif command.startswith("go "):
+            destination = command[3:].strip()
+            result = handle_go(destination)
+            if result:
+                return result
+
+        elif command.startswith("answer "):
+            answer = command[7:].strip()
+            result = handle_answer(answer)
+            if result:
+                return result
+
+        elif command == "quit":
+            print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
+            sys.exit()
+
+        else:
+            print("❓ Unknown command. Type '?' to see available commands.")

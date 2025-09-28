@@ -30,7 +30,7 @@ state = {
     "inventory": []
 }
 
-connection = sqlite3.connect("GameSave.db")
+'''connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
 fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ")
 
@@ -40,7 +40,7 @@ FROM Save
 
 crsr.execute(sqlCommand)
 
-fetchesData = crsr.fetchall()
+fetchesData = crsr.fetchall()'''
 
 
 

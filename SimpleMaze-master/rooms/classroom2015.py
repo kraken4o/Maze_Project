@@ -26,10 +26,10 @@ def enterClassroom2015(state):
             print("\"What is 7 * 6?\"")
         else:
             print("The teacher sighs: You again? You already solved the challenge.")
-            if "key" not in state["inventory"]:
-                print("On the desk, beneath the calculator, something metallic glints. It looks like a small key.")
+            if "storage_key" not in state["inventory"]:
+                print("On the desk, beneath the calculator, something metallic glints. It looks like a small storage key.")
             else:
-                print("The desk is empty. You've already taken the key.")
+                print("The desk is empty. You've already taken the storage key.")
         print("- Possible exits: corridor")
         print("- Your current inventory:", state["inventory"])
 
@@ -38,22 +38,22 @@ def enterClassroom2015(state):
         print("- look around         : Examine the room and its contents.")
         if not state["visited"]["classroom2015"]:
             print("- answer <number>     : Attempt to solve the math question.")
-        if state["visited"]["classroom2015"] and "key" not in state["inventory"]:
-            print("- take key            : Pick up the key once it's revealed.")
+        if state["visited"]["classroom2015"] and "storage_key" not in state["inventory"]:
+            print("- take storage_key            : Pick up the storage key once it's revealed.")
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
 
     def handle_take(item):
-        if item == "key":
+        if item == "storage_key":
             if not state["visited"]["classroom2015"]:
                 print("❌ There's no key visible yet. Maybe solving the puzzle will reveal more.")
-            elif "key" in state["inventory"]:
-                print("You already have the key in your backpack.")
+            elif "storage_key" in state["inventory"]:
+                print("You already have the storage key in your backpack.")
             else:
-                print("🔑 You lift the calculator from te desk and find a small brass key underneath.")
+                print("🔑 You lift the calculator from te desk and find a small storage key underneath.")
                 print("You take it and tuck it safely into your backpack.")
-                state["inventory"].append("key")
+                state["inventory"].append("storage_key")
         else:
             print(f"There is no '{item}' here to take.")
 
