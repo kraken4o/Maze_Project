@@ -6,6 +6,8 @@
 # Date: July 2025
 # -----------------------------------------------------------------------------
 import sqlite3
+import time
+import ast
 
 from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterteacher_room_maze, enterStorageroom
 
@@ -16,7 +18,7 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 
-state = {
+"""state = {
     "current_room": "corridor",
     "previous_room": "corridor",
     "visited": {
@@ -28,18 +30,23 @@ state = {
         "storageroom": False,
     },
     "inventory": []
-}
+}"""
 
 connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
-fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ")
-
+fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ").lower()
+startTime = time.time()
 crsr.execute("SELECT * FROM saves")
 saves = crsr.fetchall()
 
-fetchedData = crsr.fetchall()
-print(fetchedData)
+#print(saves)
 
+for i in saves:
+    if fileName in i:
+        state = i[1]
+        state = ast.literal_eval(state)
+        time = i[2]
+        break
 
 
 
