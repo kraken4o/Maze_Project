@@ -30,17 +30,15 @@ state = {
     "inventory": []
 }
 
-'''connection = sqlite3.connect("GameSave.db")
+connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
 fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ")
 
-sqlCommand = """SELECT SaveName, State,Time
-FROM Save
-             WHERE SaveName = fileName"""
+crsr.execute("SELECT * FROM saves")
+saves = crsr.fetchall()
 
-crsr.execute(sqlCommand)
-
-fetchesData = crsr.fetchall()'''
+fetchedData = crsr.fetchall()
+print(fetchedData)
 
 
 
