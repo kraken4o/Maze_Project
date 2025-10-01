@@ -51,8 +51,6 @@ for i in saves:
 
 
 
-
-
 while True:
     current = state["current_room"]
 

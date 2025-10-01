@@ -10,7 +10,20 @@ import sys
 from .utils import chooseNextRoom
 
 def enterEquinoxroom(state):
-    print("\n You step into the Equinox Room.")
+    if not state["visited"]["equinoxroom"]:
+        if "equinox key" not in state["inventory"]:
+            print("\n🚪 A man with black robe stands in front of the door")
+            print("'You are not allowed to enter'")
+            print("🔐 You need a key. But where could it be?")
+            return "corridor"
+        else:
+            print("\n🗝️ You insert and turn the equinox key and you hear gears moving")
+            print("\n The heavy door opens and bright light flashes you")
+
+    if not state["visited"]["equinoxroom"]:
+        print("Welcome in Equinox room")
+    else:
+        print("It's you again")
 
     # --- Helperfuncties voor commandoverwerking ---
 
@@ -29,11 +42,11 @@ def enterEquinoxroom(state):
             #already visited, puzzle solved
             print("'Welcome back! Relax and take your time!'")
             #key is not taken
-            if "equinox key" not in state["inventory"]:
-                print("You forgot to take your equinox key and it's awaiting you on top of the foosball")
+            if "project key" not in state["inventory"]:
+                print("You forgot to take your project key and it's awaiting you on top of the foosball")
             else:
                 #key is taken
-                print("You took the equinox key last time")
+                print("You took the project key last time")
         if state["solved_vending"]:
             #exit is possible after solving puzzle
             print("- Possible exits: corridor")
@@ -56,18 +69,18 @@ def enterEquinoxroom(state):
         print("- quit                : Quit the game entirely.")
 
     def handle_take(item):
-        if item == "equinox key":
+        if item == "project key":
             #first visit, not solved puzzle, no key
             if not state["visited"]["equinoxroom"]:
                 print("Maybe the key is in the big boy?")
             #check for key
-            elif "equinox key" in state["inventory"]:
-                print("You already have the equinox key in your backpack.")
+            elif "project key" in state["inventory"]:
+                print("You already have the project key in your backpack.")
             else:
                 #get key after completing puzzle
-                print("🔑 You take the equinox key from the big boy")
+                print("🔑 You take the project key from the big boy")
                 print("You take it and tuck it safely into your backpack.")
-                state["inventory"].append("equinox key")
+                state["inventory"].append("project key")
         else:
             #any item that is not the key
             print(f"There is no '{item}' here to take.")
@@ -110,7 +123,7 @@ def enterEquinoxroom(state):
         if correct_count == 3:
             print("🎉 The big boy shouts: 'Finally, you picked the right snacks and passed the test!'")
             print("Officially you are the new member of Equinox")
-            print("This grants you access to the special equinox key")
+            print("This grants you access to the special project key")
             state["visited"]["equinoxroom"] = True
             state["solved_vending"] = True
         #some of the items are not correct
