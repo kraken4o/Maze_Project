@@ -10,6 +10,15 @@ import sys
 from .utils import chooseNextRoom
 
 def enterteacher_room_maze(state):
+    if "teacher_key" not in state["inventory"]:
+        print("\n🚪 The door to Project Room 3 is locked.")
+        print("You jiggle the handle. It's no use.")
+        print("🔐 You need a key. Perhaps it's hidden elsewhere in the school?")
+        return "corridor"
+    else:
+        print("\n🗝️ You insert the brass key into the lock and turn it with a satisfying click.")
+        print("The door creaks open to reveal a bright and lively workspace.")
+
     print("\n🏫 You step into Teacher Room")
     print("The room is empty with only clues in different places")
 
@@ -43,7 +52,7 @@ def enterteacher_room_maze(state):
 
                 print("🔑 You lift the calculator from the desk and find a small brass key underneath.")
                 print("You take it and tuck it safely into your backpack.")
-                state["inventory"].append("key")
+                state["inventory"].append("class key")
         else:
             print(f"There is no '{item}' here to take.")
 
