@@ -13,7 +13,7 @@ from .utils import chooseNextRoom
 def enterProjectRoom3(state):
     # --- Check if the player has the key to enter ---
     if not state["visited"]["projectroom3"]:
-        if "key" not in state["inventory"]:
+        if "project key" not in state["inventory"]:
             print("\n🚪 The door to Project Room 3 is locked.")
             print("You jiggle the handle. It's no use.")
             print("🔐 You need a key. Perhaps it's hidden elsewhere in the school?")
