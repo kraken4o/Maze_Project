@@ -5,11 +5,11 @@
 # Location: Delft
 # Date: September 2025
 # -----------------------------------------------------------------------------
-
+import sqlite3
 import sys
 from .utils import chooseNextRoom
 
-def enterEquinoxroom(state):
+def enterEquinoxroom(state, saveName, time, startTime):
     if not state["visited"]["equinoxroom"]:
         if "equinox key" not in state["inventory"]:
             print("\n🚪 A man with black robe stands in front of the door")
@@ -17,8 +17,8 @@ def enterEquinoxroom(state):
             print("🔐 You need a key. But where could it be?")
             return "corridor"
         else:
-            print("\n🗝️ You insert and turn the equinox key and you hear gears moving")
-            print("\n The heavy door opens and bright light flashes you")
+            print("🗝️ You insert and turn the equinox key and you hear gears moving")
+            print("The heavy door opens and bright light flashes you")
 
     if not state["visited"]["equinoxroom"]:
         print("Welcome in Equinox room")
@@ -61,11 +61,15 @@ def enterEquinoxroom(state):
         print("- look around         : Examine the room and its contents.")
         if not state["visited"]["equinoxroom"]:
             #input 3 strings separated by space
-            print("- answer <3 items>     : You have to give the correct 3 items.")
-        if state["visited"]["equinoxroom"] and "key" not in state["inventory"]:
-            print("- take key            : Pick up the key once it's revealed.")
-        print("- go corridor / back  : Leave the room and return to the corridor.")
+            print("- answer <3 items>     : You have to give the correct 3 items separated by comma.")
+        if state["visited"]["equinoxroom"] and "project key" not in state["inventory"]:
+            print("- take project key            : Pick up the project key once it's revealed.")
+        if not state["visited"]["equinoxroom"]:
+            print("- go command is currently disabled due to uncompleted puzzle")
+        else:
+            print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
+        print("- pause               : Pause the game.")
         print("- quit                : Quit the game entirely.")
 
     def handle_take(item):
@@ -97,6 +101,28 @@ def enterEquinoxroom(state):
         else:
             print(f"❌ You can't go to '{destination}' from here.")
 
+    def handle_pause(state, saveName, time, startTime):
+
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+        if saveName == "test":
+            userName = input("enter name of save file: ")
+            while flag:
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO Saves (saveName, state) VALUES (?, ?)""", (userName, str(state)))
+                    conn.commit()
+                    sys.exit()
+        else:
+            cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
+            conn.commit()
+            sys.exit()
+
+
     # --- Extra state for the vending machine puzzle ---
 
     #initialize puzzle state
@@ -109,27 +135,30 @@ def enterEquinoxroom(state):
 
     #handles puzzles and requires exactly 3 items
     def handle_answer(answer):
-        items = answer.split()
-
-        if len(items) != 3:
-            print("❌ You must choose exactly 3 items, e.g.: answer apple banana orange")
-            return
-        #turn the list into set(no duplicates)
-        state["chosen_items"] = set(items)
-        #makes intersection, checks how much of the items match and turns that to int
-        correct_count = len(state["chosen_items"] & correct_items)
-
-        # if 3 out of 3 items are correct- puzzle solved
-        if correct_count == 3:
-            print("🎉 The big boy shouts: 'Finally, you picked the right snacks and passed the test!'")
-            print("Officially you are the new member of Equinox")
-            print("This grants you access to the special project key")
-            state["visited"]["equinoxroom"] = True
-            state["solved_vending"] = True
-        #some of the items are not correct
+        if state["visited"]["equinoxroom"]:
+            print("You already fed big boy")
         else:
-            print(f"🤨 The big boy shakes his head: 'Hmm… {correct_count} of those are right.'")
-            print("Try again!")
+            items = [item.strip() for item in answer.split(",")]
+
+            if len(items) != 3:
+                print("❌ You must choose exactly 3 items using comas")
+                return
+            #turn the list into set(no duplicates)
+            state["chosen_items"] = set(items)
+            #makes intersection, checks how much of the items match and turns that to int
+            correct_count = len(state["chosen_items"] & correct_items)
+
+            # if 3 out of 3 items are correct- puzzle solved
+            if correct_count == 3:
+                print("🎉 The big boy shouts: 'Finally, you picked the right snacks and passed the test!'")
+                print("Officially you are the new member of Equinox")
+                print("This grants you access to the special project key")
+                state["visited"]["equinoxroom"] = True
+                state["solved_vending"] = True
+            #some of the items are not correct
+            else:
+                print(f"🤨 The big boy shakes his head: 'Hmm… {correct_count} of those are right.'")
+                print("Try again!")
 
     # --- Commandoloop ---
     while True:
@@ -140,6 +169,9 @@ def enterEquinoxroom(state):
 
         elif command == "?":
             handle_help()
+
+        elif command=="pause":
+            handle_pause(state,saveName,time,startTime)
 
         elif command.startswith("take "):
             item = command[5:].strip()
