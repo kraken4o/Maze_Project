@@ -110,7 +110,7 @@ def enterClassroom2031(state, saveName, time, startTime):
         flag = True
         conn = sqlite3.connect("GameSave.db")
         cursor = conn.cursor()
-        if saveName == "test":
+        if saveName == "no save":
             userName = input("enter name of save file: ")
             while flag:
                 cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
