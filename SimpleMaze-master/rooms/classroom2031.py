@@ -1,6 +1,8 @@
 import sys
+import time
+import sqlite3
 
-def enterClassroom2031(state):
+def enterClassroom2031(state, saveName, time, startTime):
 
 
     # --- Check if the player has the key to enter ---
@@ -59,6 +61,7 @@ def enterClassroom2031(state):
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
+        print("- pause                : Pause the game.")
 
     def handle_take(item):
         if item == "equinox key":
@@ -102,8 +105,28 @@ def enterClassroom2031(state):
             return  ansNum
 
 
-    def handle_pause(state):
-        print()
+    def handle_pause(state, saveName, time, startTime):
+
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+        if saveName == "test":
+            userName = input("enter name of save file: ")
+            while flag:
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO Saves (saveName, state) VALUES (?, ?)""", (userName, str(state)))
+                    conn.commit()
+                    sys.exit()
+        else:
+            cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
+            conn.commit()
+            sys.exit()
+
+
 
 
 
@@ -130,6 +153,9 @@ def enterClassroom2031(state):
         elif command.startswith("answer "):
             answer = command[7:].strip()
             answerNum = handle_answer(answer, logicAnswer, answerNum, logicPuzzle)
+
+        elif command == "pause":
+            handle_pause(state, saveName, time, startTime)
 
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")

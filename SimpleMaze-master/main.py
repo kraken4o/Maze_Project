@@ -34,8 +34,10 @@ print("*************************************************************************
 
 connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
+
 fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ").lower()
 startTime = time.time()
+
 crsr.execute("SELECT * FROM saves")
 saves = crsr.fetchall()
 
@@ -70,7 +72,7 @@ while True:
         state["current_room"]=enterEquinoxroom(state)
     
     elif current=="classroom2031":
-        state["current_room"]=enterClassroom2031(state)
+        state["current_room"]=enterClassroom2031(state, fileName, time, startTime)
 
     elif current=="teacher_room_maze":
         state["current_room"]=enterteacher_room_maze(state)
