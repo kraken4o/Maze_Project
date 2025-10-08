@@ -7,10 +7,11 @@
 # -----------------------------------------------------------------------------
 
 import sys
+import time as t # 'time' module allows us to measure time in seconds
+import sqlite3
 from .utils import chooseNextRoom
 
-def enterStorageroom(state):
-
+def enterStorageroom(state, saveName, time_played, startTime):
     if not state["visited"]["storageroom"]:
         # Message if you dont have the storage key for your room
         if "storage_key" not in state["inventory"]:
@@ -59,6 +60,7 @@ def enterStorageroom(state):
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
+        print("- pause                : Pause the game.")
     #command 'look inside'
     def handle_open(where):
         if where == "inside":
@@ -104,6 +106,41 @@ def enterStorageroom(state):
             print("You think its about to explode so you quickly exit the room.")
             return "corridor"
 
+    def handle_pause(state, saveName, time_played, startTime):
+    # state: the dictionary storing current room, previous room, inventory, and visited rooms
+    #saveName: the name of the save file (or "no save" if it's a new game)
+    #time_played: total time played in previous sessions (in seconds)
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+
+        #elapsed time is the total time accross all sessions
+        elapsed_time = (t.time() - startTime) + time_played
+        #t.time() here is the seconds since the epoch(Jan 1, 1970) when you hit pause
+        #Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
+        #time played adds the previous to the current seconds played ofn the same file
+        if saveName == "no save":
+            # Ask player for a new save file name
+            userName = input("enter name of save file: ")
+            while flag:
+                # Check if the save file already exists
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
+                    #new file adds states and elapsedtime
+                    conn.commit()
+                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
+                    sys.exit()
+        else:
+            #updated the old databsee file with new state and elapsed time
+            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""", (str(state), elapsed_time, saveName))
+            conn.commit()
+            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
+            sys.exit()
+
 # --- Commandoloop ---
     while True:
         command = input("\n> ").strip().lower()
@@ -133,6 +170,10 @@ def enterStorageroom(state):
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
             sys.exit()
+
+        elif command == "pause":
+            handle_pause(state, saveName, time_played, startTime)
+
 
         else:
             print("❓ Unknown command. Type '?' to see available commands.")

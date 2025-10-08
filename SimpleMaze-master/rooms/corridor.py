@@ -5,11 +5,12 @@
 # Location: Delft
 # Date: July 2025
 # -----------------------------------------------------------------------------
-
+import sqlite3
 import sys
+import time as t
 from .utils import chooseNextRoom
 
-def enterCorridor(state):
+def enterCorridor(state, saveName, time_played, startTime):
     print("\n🚶 You are standing in the school's main corridor.")
     print("You see a long corridor with many doors and glass walls on both side. Behind these door are rooms, waiting to be explored.")
 
@@ -32,6 +33,7 @@ def enterCorridor(state):
         print("- go <room name>      : Move to another room. Example: go classroom2015")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game.")
+        print("- pause                : Pause the game.")
 
     def handle_go(room_name):
         """Move to a listed room."""
@@ -43,6 +45,37 @@ def enterCorridor(state):
         else:
             print(f"❌ '{room_name}' is not a valid exit. Use 'look around' to see available options.")
             return None
+
+    def handle_pause(state, saveName, time_played, startTime):
+
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+
+        #elapsed time is the total time accross all sessions
+        elapsed_time = (t.time() - startTime) + time_played
+        #t.time() here is the seconds since the epoch(Jan 1, 1970) when you hit pause
+        #Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
+        #time played adds the previous to the current seconds played ofn the same file
+        if saveName == "no save":
+            userName = input("enter name of save file: ")
+            while flag:
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
+                    #new file adds states and elapsedtime
+                    conn.commit()
+                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
+                    sys.exit()
+        else:
+            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""", (str(state), elapsed_time, saveName))
+            #updated the old databsee file with new state and elapsed time
+            conn.commit()
+            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
+            sys.exit()
 
     # --- Main corridor command loop ---
     while True:
@@ -63,6 +96,9 @@ def enterCorridor(state):
         elif command == "quit":
             print("👋 You leave the school and the adventure comes to an end. Game over.")
             sys.exit()
+
+        elif command == "pause":
+            handle_pause(state, saveName, time_played, startTime)
 
         else:
             print("❓ Unknown command. Type '?' to see available commands.")
