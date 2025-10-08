@@ -5,13 +5,14 @@
 # Location: Delft
 # Date: July 2025
 # -----------------------------------------------------------------------------
-
 import sqlite3
 import sys
-import time as t
+import time
+from math import ceil
+
 from .utils import chooseNextRoom
 
-def enterClassroom2015(state, saveName, time_played, startTime):
+def enterClassroom2015(state, saveName,gtime,startTime):
     print("\n🏫 You step into Classroom 2.015.")
     print("The classroom is filled with students. A teacher turns toward you, visibly annoyed.")
     print("The door creaks shut behind you. Everyone is looking at you; it's completely silent.")
@@ -43,9 +44,10 @@ def enterClassroom2015(state, saveName, time_played, startTime):
         if state["visited"]["classroom2015"] and "storage_key" not in state["inventory"]:
             print("- take storage_key            : Pick up the storage key once it's revealed.")
         print("- go corridor / back  : Leave the room and return to the corridor.")
+        print("- status              : Show game status.")
+        print("- pause               : Pause the game.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
-        print("- pause                : Pause the game.")
 
     def handle_take(item):
         if item == "storage_key":
@@ -80,17 +82,22 @@ def enterClassroom2015(state, saveName, time_played, startTime):
             print("You are gently guided back into the corridor.")
             return "corridor"
 
-    def handle_pause(state, saveName, time_played, startTime):
+    def handle_status():
+        count = 0  # Initialize inside the function
+        for room, visited in state["visited"].items():
+            if visited:
+                count += 1
+        perc = (count / len(state['visited'])) * 100
+        print("Save name: ",saveName)
+        print("Time played: ",gtime)
+        print(f"{ceil(perc)}% of rooms visited")
 
+    def handle_pause(state, saveName, gtime, startTime):
+
+        endTime = (time.time() - startTime) + gtime
         flag = True
         conn = sqlite3.connect("GameSave.db")
         cursor = conn.cursor()
-
-        #elapsed time is the total time accross all sessions
-        elapsed_time = (t.time() - startTime) + time_played
-        #t.time() here is the seconds since the epoch(Jan 1, 1970) when you hit pause
-        #Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
-        #time played adds the previous to the current seconds played ofn the same file
         if saveName == "no save":
             userName = input("enter name of save file: ")
             while flag:
@@ -99,17 +106,17 @@ def enterClassroom2015(state, saveName, time_played, startTime):
                 if saveList:
                     userName = input("save file already exists enter name of save file: ")
                 else:
-                    cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
-                    #new file adds states and elapsedtime
+                    cursor.execute("""INSERT INTO Saves (saveName, state, time) VALUES (?, ?, ?)""", (userName, str(state), endTime))
                     conn.commit()
-                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
                     sys.exit()
         else:
-            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""", (str(state), elapsed_time, saveName))
-            #updated the old databsee file with new state and elapsed time
+            cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
             conn.commit()
-            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
+            cursor.execute("""UPDATE Saves SET time = ? WHERE saveName = ?""", (endTime, saveName))
+            conn.commit()
+
             sys.exit()
+
     # --- Commandoloop ---
     while True:
         command = input("\n> ").strip().lower()
@@ -119,6 +126,12 @@ def enterClassroom2015(state, saveName, time_played, startTime):
 
         elif command == "?":
             handle_help()
+
+        elif command=="status":
+            handle_status()
+
+        elif command=="pause":
+            handle_pause(state,saveName,gtime,startTime)
 
         elif command.startswith("take "):
             item = command[5:].strip()
@@ -139,9 +152,6 @@ def enterClassroom2015(state, saveName, time_played, startTime):
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
             sys.exit()
-
-        elif command == "pause":
-            handle_pause(state, saveName, time_played, startTime)
 
         else:
             print("❓ Unknown command. Type '?' to see available commands.")
