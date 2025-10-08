@@ -1,10 +1,9 @@
 import sys
-import time
+
 import sqlite3
 
-def enterClassroom2031(state, saveName, time, startTime):
-
-
+def enterClassroom2031(state, saveName, gtime, startTime):
+    import time
     # --- Check if the player has the key to enter ---
     if not state["visited"]["classroom2031"]:
         if "class key" not in state["inventory"]:
@@ -105,8 +104,9 @@ def enterClassroom2031(state, saveName, time, startTime):
             return  ansNum
 
 
-    def handle_pause(state, saveName, time, startTime):
+    def handle_pause(state, saveName, gtime, startTime):
 
+        endTime = (time.time() - startTime) + gtime
         flag = True
         conn = sqlite3.connect("GameSave.db")
         cursor = conn.cursor()
@@ -118,13 +118,28 @@ def enterClassroom2031(state, saveName, time, startTime):
                 if saveList:
                     userName = input("save file already exists enter name of save file: ")
                 else:
-                    cursor.execute("""INSERT INTO saves (saveName, state) VALUES (?, ?)""", (userName, str(state)))
+                    cursor.execute("""INSERT INTO Saves (saveName, state, time) VALUES (?, ?, ?)""", (userName, str(state), endTime))
                     conn.commit()
                     sys.exit()
         else:
             cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
             conn.commit()
+            cursor.execute("""UPDATE Saves SET time = ? WHERE saveName = ?""", (endTime, saveName))
+            conn.commit()
+
             sys.exit()
+
+    def handle_status(state):
+
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i] == True:
+                completed += 1
+        print("you have completed " + str((completed/totalgame)*100) + "% of the gate")
+
+
 
 
 
@@ -155,7 +170,10 @@ def enterClassroom2031(state, saveName, time, startTime):
             answerNum = handle_answer(answer, logicAnswer, answerNum, logicPuzzle)
 
         elif command == "pause":
-            handle_pause(state, saveName, time, startTime)
+            handle_pause(state, saveName, gtime, startTime)
+
+        elif command == "status":
+            handle_status(state)
 
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
