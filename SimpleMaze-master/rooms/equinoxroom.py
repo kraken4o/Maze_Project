@@ -55,7 +55,7 @@ def enterEquinoxroom(state, saveName, time, startTime):
             print("- Possible exits: currently blocked")
         print("- Your current inventory:", state["inventory"])
 
-    # --- basic states ---
+    # --- basic states---
 
     def handle_help():
         print("\nAvailable commands:")
