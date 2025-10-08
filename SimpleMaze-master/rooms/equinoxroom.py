@@ -7,6 +7,7 @@
 # -----------------------------------------------------------------------------
 import sqlite3
 import sys
+from math import ceil
 from .utils import chooseNextRoom
 
 def enterEquinoxroom(state, saveName, time, startTime):
@@ -69,6 +70,7 @@ def enterEquinoxroom(state, saveName, time, startTime):
         else:
             print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
+        print("- status              : Show game status")
         print("- pause               : Pause the game.")
         print("- quit                : Quit the game entirely.")
 
@@ -100,6 +102,15 @@ def enterEquinoxroom(state, saveName, time, startTime):
                 return "corridor"
         else:
             print(f"❌ You can't go to '{destination}' from here.")
+
+    def handle_status():
+        count = 0  # Initialize inside the function
+        for room, visited in state["visited"].items():
+            if visited:
+                count += 1
+        perc = (count / len(state['visited'])) * 100
+        print(f"{ceil(perc)}% of rooms visited")
+
 
     def handle_pause(state, saveName, time, startTime):
 
@@ -172,6 +183,9 @@ def enterEquinoxroom(state, saveName, time, startTime):
 
         elif command=="pause":
             handle_pause(state,saveName,time,startTime)
+
+        elif command=="status":
+            handle_status()
 
         elif command.startswith("take "):
             item = command[5:].strip()

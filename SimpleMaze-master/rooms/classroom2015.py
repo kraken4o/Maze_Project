@@ -7,6 +7,7 @@
 # -----------------------------------------------------------------------------
 
 import sys
+from math import ceil
 from .utils import chooseNextRoom
 
 def enterClassroom2015(state):
@@ -65,6 +66,14 @@ def enterClassroom2015(state):
             print(f"❌ You can't go to '{destination}' from here.")
             return None
 
+    def handle_status():
+        count = 0  # Initialize inside the function
+        for room, visited in state["visited"].items():
+            if visited:
+                count += 1
+        perc=(count/len(state['visited']))*100
+        print(f"{ceil(perc)}% of rooms visited")
+
     def handle_answer(answer):
         if state["visited"]["classroom2015"]:
             print("✅ You've already solved this challenge.")
@@ -86,6 +95,8 @@ def enterClassroom2015(state):
 
         elif command == "?":
             handle_help()
+        elif command=="status":
+            handle_status()
 
         elif command.startswith("take "):
             item = command[5:].strip()
