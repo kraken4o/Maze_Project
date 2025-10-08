@@ -83,7 +83,7 @@ while True:
         state["current_room"]=enterEquinoxroom(state)
     
     elif current=="classroom2031":
-        state["current_room"]=enterClassroom2031(state, fileName, time_played, startTime)
+        state["current_room"]=enterClassroom2031(state, fileName, time, startTime)
 
     elif current=="teacher_room_maze":
         state["current_room"]=enterteacher_room_maze(state)
