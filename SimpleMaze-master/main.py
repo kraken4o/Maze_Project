@@ -80,7 +80,7 @@ while True:
         state["current_room"] = enterProjectRoom3(state)
 
     elif current=="equinoxroom":
-        state["current_room"]=enterEquinoxroom(state)
+        state["current_room"]=enterEquinoxroom(state, fileName, time, startTime)
     
     elif current=="classroom2031":
         state["current_room"]=enterClassroom2031(state, fileName, time, startTime)

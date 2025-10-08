@@ -5,11 +5,14 @@
 # Location: Delft
 # Date: July 2025
 # -----------------------------------------------------------------------------
-
+import sqlite3
 import sys
+import time
+from math import ceil
+
 from .utils import chooseNextRoom
 
-def enterClassroom2015(state):
+def enterClassroom2015(state, saveName,gtime,startTime):
     print("\n🏫 You step into Classroom 2.015.")
     print("The classroom is filled with students. A teacher turns toward you, visibly annoyed.")
     print("The door creaks shut behind you. Everyone is looking at you; it's completely silent.")
@@ -41,6 +44,8 @@ def enterClassroom2015(state):
         if state["visited"]["classroom2015"] and "storage_key" not in state["inventory"]:
             print("- take storage_key            : Pick up the storage key once it's revealed.")
         print("- go corridor / back  : Leave the room and return to the corridor.")
+        print("- status              : Show game status.")
+        print("- pause               : Pause the game.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
 
@@ -77,6 +82,41 @@ def enterClassroom2015(state):
             print("You are gently guided back into the corridor.")
             return "corridor"
 
+    def handle_status():
+        count = 0  # Initialize inside the function
+        for room, visited in state["visited"].items():
+            if visited:
+                count += 1
+        perc = (count / len(state['visited'])) * 100
+        print("Save name: ",saveName)
+        print("Time played: ",gtime)
+        print(f"{ceil(perc)}% of rooms visited")
+
+    def handle_pause(state, saveName, gtime, startTime):
+
+        endTime = (time.time() - startTime) + gtime
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+        if saveName == "no save":
+            userName = input("enter name of save file: ")
+            while flag:
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO Saves (saveName, state, time) VALUES (?, ?, ?)""", (userName, str(state), endTime))
+                    conn.commit()
+                    sys.exit()
+        else:
+            cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
+            conn.commit()
+            cursor.execute("""UPDATE Saves SET time = ? WHERE saveName = ?""", (endTime, saveName))
+            conn.commit()
+
+            sys.exit()
+
     # --- Commandoloop ---
     while True:
         command = input("\n> ").strip().lower()
@@ -86,6 +126,12 @@ def enterClassroom2015(state):
 
         elif command == "?":
             handle_help()
+
+        elif command=="status":
+            handle_status()
+
+        elif command=="pause":
+            handle_pause(state,saveName,gtime,startTime)
 
         elif command.startswith("take "):
             item = command[5:].strip()

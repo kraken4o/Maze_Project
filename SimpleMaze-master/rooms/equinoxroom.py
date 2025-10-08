@@ -7,10 +7,11 @@
 # -----------------------------------------------------------------------------
 import sqlite3
 import sys
+import time
 from math import ceil
 from .utils import chooseNextRoom
 
-def enterEquinoxroom(state, saveName, time, startTime):
+def enterEquinoxroom(state, saveName, gtime, startTime):
     if not state["visited"]["equinoxroom"]:
         if "equinox key" not in state["inventory"]:
             print("\n🚪 A man with black robe stands in front of the door")
@@ -109,15 +110,17 @@ def enterEquinoxroom(state, saveName, time, startTime):
             if visited:
                 count += 1
         perc = (count / len(state['visited'])) * 100
+        print("Save name: ", saveName)
+        print("Time played: ", gtime)
         print(f"{ceil(perc)}% of rooms visited")
 
+    def handle_pause(state, saveName, gtime, startTime):
 
-    def handle_pause(state, saveName, time, startTime):
-
+        endTime = (time.time() - startTime) + gtime
         flag = True
         conn = sqlite3.connect("GameSave.db")
         cursor = conn.cursor()
-        if saveName == "test":
+        if saveName == "no save":
             userName = input("enter name of save file: ")
             while flag:
                 cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
@@ -125,12 +128,16 @@ def enterEquinoxroom(state, saveName, time, startTime):
                 if saveList:
                     userName = input("save file already exists enter name of save file: ")
                 else:
-                    cursor.execute("""INSERT INTO Saves (saveName, state) VALUES (?, ?)""", (userName, str(state)))
+                    cursor.execute("""INSERT INTO Saves (saveName, state, time) VALUES (?, ?, ?)""",
+                                   (userName, str(state), endTime))
                     conn.commit()
                     sys.exit()
         else:
             cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
             conn.commit()
+            cursor.execute("""UPDATE Saves SET time = ? WHERE saveName = ?""", (endTime, saveName))
+            conn.commit()
+
             sys.exit()
 
 
