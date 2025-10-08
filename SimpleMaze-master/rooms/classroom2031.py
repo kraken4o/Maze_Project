@@ -1,8 +1,8 @@
 import sys
-
+import time as t
 import sqlite3
 
-def enterClassroom2031(state, saveName, gtime, startTime):
+def enterClassroom2031(state, saveName, time_played, startTime):
     import time
     # --- Check if the player has the key to enter ---
     if not state["visited"]["classroom2031"]:
@@ -104,9 +104,9 @@ def enterClassroom2031(state, saveName, gtime, startTime):
             return  ansNum
 
 
-    def handle_pause(state, saveName, gtime, startTime):
+    def handle_pause(state, saveName, time_played, startTime):
 
-        endTime = (time.time() - startTime) + gtime
+        elapsed_time = (t.time() - startTime) + time_played
         flag = True
         conn = sqlite3.connect("GameSave.db")
         cursor = conn.cursor()
@@ -118,15 +118,16 @@ def enterClassroom2031(state, saveName, gtime, startTime):
                 if saveList:
                     userName = input("save file already exists enter name of save file: ")
                 else:
-                    cursor.execute("""INSERT INTO Saves (saveName, state, time) VALUES (?, ?, ?)""", (userName, str(state), endTime))
+                    cursor.execute("""INSERT INTO Saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
                     conn.commit()
+                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
                     sys.exit()
         else:
-            cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
+            # updated the old databsee file with new state and elapsed time
+            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
+                           (str(state), elapsed_time, saveName))
             conn.commit()
-            cursor.execute("""UPDATE Saves SET time = ? WHERE saveName = ?""", (endTime, saveName))
-            conn.commit()
-
+            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
             sys.exit()
 
     def handle_status(state):
@@ -170,7 +171,7 @@ def enterClassroom2031(state, saveName, gtime, startTime):
             answerNum = handle_answer(answer, logicAnswer, answerNum, logicPuzzle)
 
         elif command == "pause":
-            handle_pause(state, saveName, gtime, startTime)
+            handle_pause(state, saveName, time_played, startTime)
 
         elif command == "status":
             handle_status(state)
