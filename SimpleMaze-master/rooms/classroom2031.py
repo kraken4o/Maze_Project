@@ -118,7 +118,7 @@ def enterClassroom2031(state, saveName, time, startTime):
                 if saveList:
                     userName = input("save file already exists enter name of save file: ")
                 else:
-                    cursor.execute("""INSERT INTO Saves (saveName, state) VALUES (?, ?)""", (userName, str(state)))
+                    cursor.execute("""INSERT INTO saves (saveName, state) VALUES (?, ?)""", (userName, str(state)))
                     conn.commit()
                     sys.exit()
         else:
