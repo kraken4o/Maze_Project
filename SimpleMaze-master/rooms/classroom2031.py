@@ -130,15 +130,18 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
             sys.exit()
 
-    def handle_status(state):
+    def handle_status(state, saveName, time_played, startTime):
 
+        elapsed_time = (t.time() - startTime) + time_played
         completed = 0
         totalgame = 0
         for i in state["visited"]:
             totalgame += 1
             if state["visited"][i] == True:
                 completed += 1
+        print(saveName, ":")
         print("you have completed " + str((completed/totalgame)*100) + "% of the gate")
+        print("time played:", elapsed_time)
 
 
 
