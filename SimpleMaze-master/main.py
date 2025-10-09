@@ -87,7 +87,7 @@ while True:
         state["current_room"]=enterClassroom2031(state, fileName, time_played, startTime)
 
     elif current=="teacherroom":
-        state["current_room"] = enterTeacherroom(state)
+        state["current_room"] = enterTeacherroom(state, fileName, time_played, startTime)
 
     elif current=="storageroom":
         state["current_room"]=enterStorageroom(state, fileName, time_played, startTime)

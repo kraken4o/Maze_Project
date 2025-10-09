@@ -10,9 +10,11 @@ import sys
 from .utils import chooseNextRoom
 
 
-def enterTeacherroom(state):
+def enterTeacherroom(state, saveName, time_played, startTime):
     if "teacherroom" not in state["visited"]:
         state["visited"]["teacherroom"] = False
+
+    if "teacher_key" not in state["inventory"]:
         print("\n🚪 The door to Project Room 3 is locked.")
         print("You jiggle the handle. It's no use.")
         print("🔐 You need a key. Perhaps it's hidden elsewhere in the school?")
@@ -86,6 +88,31 @@ def enterTeacherroom(state):
             print("Incorrect")
             return "corridor"
 
+    def handle_pause(state, saveName, time_played, startTime):
+
+        elapsed_time = (t.time() - startTime) + time_played
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+        if saveName == "no save":
+            userName = input("enter name of save file: ")
+            while flag:
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO Saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
+                    conn.commit()
+                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
+                    sys.exit()
+        else:
+            # updated the old databsee file with new state and elapsed time
+            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
+                           (str(state), elapsed_time, saveName))
+            conn.commit()
+            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
+            sys.exit()
 
     # --- Commandoloop ---
     while True:
@@ -112,6 +139,9 @@ def enterTeacherroom(state):
             result = handle_answer(answer)
             if result:
                 return result
+
+        elif command == "pause":
+            handle_pause(state, saveName, time_played, startTime)
 
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
