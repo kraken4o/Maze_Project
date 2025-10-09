@@ -7,7 +7,8 @@
 # -----------------------------------------------------------------------------
 
 import sys
-from .utils import chooseNextRoom
+from utils import chooseNextRoom
+
 
 def enterteacher_room_maze(state):
     if "teacher_key" not in state["inventory"]:
@@ -32,7 +33,8 @@ def enterteacher_room_maze(state):
             print("You find a note with a clue:")
             print("you need to solve a question to get the clue")
             print("\"What is 5 * 4?\"")
-
+        else:
+            print("❌ That’s not correct. Try again later!")
 
     def handle_help():
         print("\nAvailable commands:")
