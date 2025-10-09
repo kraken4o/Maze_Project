@@ -31,6 +31,7 @@ state = {
     },
     "inventory": []
 }
+
 # Connect to the database (creates GameSave.db if it doesn't exist)
 connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
