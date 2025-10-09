@@ -9,7 +9,7 @@ import sqlite3
 import time
 import ast
 
-from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterteacher_room_maze, enterStorageroom
+from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterTeacherroom, enterStorageroom
 
 print("****************************************************************************")
 print("*                      Welcome to the School Maze!                         *")
@@ -26,7 +26,7 @@ state = {
         "projectroom3": False,
         "equinoxroom": False,
         "classroom2031": False,
-        "teacher_room_maze": False,
+        "teacherroom": False,
         "storageroom": False,
     },
     "inventory": []
@@ -86,8 +86,8 @@ while True:
     elif current=="classroom2031":
         state["current_room"]=enterClassroom2031(state, fileName, time_played, startTime)
 
-    elif current=="teacher_room_maze":
-        state["current_room"]=enterteacher_room_maze(state)
+    elif current=="teacherroom":
+        state["current_room"] = enterTeacherroom(state)
 
     elif current=="storageroom":
         state["current_room"]=enterStorageroom(state, fileName, time_played, startTime)

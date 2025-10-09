@@ -7,17 +7,18 @@
 # -----------------------------------------------------------------------------
 
 import sys
-from utils import chooseNextRoom
+from .utils import chooseNextRoom
 
 
-def enterteacher_room_maze(state):
-    if "teacher_key" not in state["inventory"]:
+def enterTeacherroom(state):
+    if "teacherroom" not in state["visited"]:
+        state["visited"]["teacherroom"] = False
         print("\n🚪 The door to Project Room 3 is locked.")
         print("You jiggle the handle. It's no use.")
         print("🔐 You need a key. Perhaps it's hidden elsewhere in the school?")
         return "corridor"
     else:
-        print("\n🗝️ You insert the brass key into the lock and turn it with a satisfying click.")
+        print("\n🗝️ You insert the teacher key into the lock and turn it with a satisfying click.")
         print("The door creaks open to reveal a bright and lively workspace.")
 
     print("\n🏫 You step into Teacher Room")
@@ -34,25 +35,34 @@ def enterteacher_room_maze(state):
             print("you need to solve a question to get the clue")
             print("\"What is 5 * 4?\"")
         else:
-            print("❌ That’s not correct. Try again later!")
+            print("The teacher sighs: You again? You already solved the challenge.")
+            if "class key" not in state["inventory"]:
+                print(
+                    "On the desk, beneath the calculator, something metallic glints. It looks like a small class key.")
+            else:
+                print("The desk is empty. You've already taken the class key.")
+        print("- Possible exits: corridor")
+        print("- Your current inventory:", state["inventory"])
 
     def handle_help():
         print("\nAvailable commands:")
         print("- look around         : Examine the room and its contents.")
         if not state["visited"]["teacherroom"]:
             print("- answer <number>     : Attempt to solve the math question.")
-        if state["visited"]["teacherroom"] and "key" not in state["inventory"]:
-            print("- take key            : Pick up the key once it's revealed.")
+        if state["visited"]["teacherroom"] and "class key" not in state["inventory"]:
+            print("- take class key            : Pick up the class key once it's revealed.")
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
 
     def handle_take(item):
-        if item == "key":
+        if item == "class key":
             if not state["visited"]["teacherroom"]:
                 print("❌ There's no key visible yet. Maybe solving another puzzle will reveal more.")
-
-                print("🔑 You lift the calculator from the desk and find a small brass key underneath.")
+            elif "class key" in state["inventory"]:
+                print("You already have the storage key in your backpack.")
+            else:
+                print("🔑 You lift the calculator from the desk and find a class key underneath.")
                 print("You take it and tuck it safely into your backpack.")
                 state["inventory"].append("class key")
         else:
@@ -67,7 +77,7 @@ def enterteacher_room_maze(state):
             return None
 
     def handle_answer(answer):
-        if state["visited"]["classroom2015"]:
+        if state["visited"]["teacherroom"]:
             print("✅ You've already solved this challenge.")
         elif answer == "20":
             print("✅ Correct! You can now go to the next room.")
@@ -75,7 +85,6 @@ def enterteacher_room_maze(state):
         else:
             print("Incorrect")
             return "corridor"
-
 
 
     # --- Commandoloop ---

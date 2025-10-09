@@ -12,7 +12,8 @@ from .classroom2015 import enterClassroom2015
 from .projectroom3 import enterProjectRoom3
 from .equinoxroom import enterEquinoxroom
 from .classroom2031 import enterClassroom2031
-from .utils import chooseNextRoom
-from .teacher_room_maze import enterteacher_room_maze
+from .teacherroom import enterTeacherroom
 from .storageroom import enterStorageroom
+from .utils import chooseNextRoom
+
 

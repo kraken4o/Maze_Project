@@ -15,7 +15,7 @@ def enterCorridor(state, saveName, time_played, startTime):
     print("You see a long corridor with many doors and glass walls on both side. Behind these door are rooms, waiting to be explored.")
 
     # --- List of accessible rooms from here ---
-    available_rooms = ["classroom2015", "projectroom3", "studylandscape","equinoxroom","classroom2031","teacher_room_maze","storageroom"]
+    available_rooms = ["classroom2015", "projectroom3", "studylandscape","equinoxroom","classroom2031","teacherroom","storageroom"]
 
     # --- Command handlers ---
 
