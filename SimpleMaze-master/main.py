@@ -28,6 +28,7 @@ state = {
         "classroom2031": False,
         "teacherroom": False,
         "storageroom": False,
+        "studylandscape": False,
     },
     "inventory": []
 }
@@ -72,16 +73,16 @@ while True:
         state["current_room"] = enterCorridor(state, fileName, time_played, startTime)
 
     elif current == "studylandscape":
-        state["current_room"] = enterStudyLandscape(state)
+        state["current_room"] = enterStudyLandscape(state, fileName, time_played, startTime)
 
     elif current == "classroom2015":
         state["current_room"] = enterClassroom2015(state, fileName, time_played, startTime)
 
     elif current == "projectroom3":
-        state["current_room"] = enterProjectRoom3(state)
+        state["current_room"] = enterProjectRoom3(state, fileName, time_played, startTime)
 
     elif current=="equinoxroom":
-        state["current_room"]=enterEquinoxroom(state, fileName, time, startTime)
+        state["current_room"]=enterEquinoxroom(state, fileName, time_played, startTime)
     
     elif current=="classroom2031":
         state["current_room"]=enterClassroom2031(state, fileName, time_played, startTime)

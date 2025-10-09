@@ -8,9 +8,11 @@
 # -----------------------------------------------------------------------------
 
 import sys
+import time as t
+import sqlite3
 from .utils import chooseNextRoom
 
-def enterProjectRoom3(state):
+def enterProjectRoom3(state, saveName, time_played, startTime):
     # --- Check if the player has the key to enter ---
     if not state["visited"]["projectroom3"]:
         if "project key" not in state["inventory"]:
@@ -52,6 +54,7 @@ def enterProjectRoom3(state):
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game completely.")
+        print("- pause                : Pause the game.")
 
     def handle_go(destination):
         """Handle movement out of the room."""
@@ -76,11 +79,55 @@ def enterProjectRoom3(state):
             print("You've explored all the essential rooms of the school.")
             print("Your adventure through logic, memory, and mystery ends here.")
             print("\n🏆 You completed the game! 🏆")
+
+            elapsed_time = (t.time() - startTime) + time_played
+            conn = sqlite3.connect("GameSave.db")
+            cursor = conn.cursor()
+            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
+                           (str(state), elapsed_time, saveName))
+            conn.commit()
+            print(f"Total playtime: {elapsed_time:.2f} seconds.")
             sys.exit()
         else:
             print("❌ The student shrugs. 'Nope, that one's not it. Think classic.'")
             print("You decide to step out and think it over.")
             return "corridor"
+
+    def handle_pause(state, saveName, time_played, startTime):
+    # state: the dictionary storing current room, previous room, inventory, and visited rooms
+    #saveName: the name of the save file (or "no save" if it's a new game)
+    #time_played: total time played in previous sessions (in seconds)
+        flag = True
+        conn = sqlite3.connect("GameSave.db")
+        cursor = conn.cursor()
+
+        #elapsed time is the total time accross all sessions
+        elapsed_time = (t.time() - startTime) + time_played
+        #t.time() here is the seconds since the epoch(Jan 1, 1970) when you hit pause
+        #Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
+        #time played adds the previous to the current seconds played ofn the same file
+        if saveName == "no save":
+            # Ask player for a new save file name
+            userName = input("enter name of save file: ")
+            while flag:
+                # Check if the save file already exists
+                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                saveList = cursor.fetchall()
+                if saveList:
+                    userName = input("save file already exists enter name of save file: ")
+                else:
+                    cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
+                    #new file adds states and elapsedtime
+                    conn.commit()
+                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
+                    sys.exit()
+        else:
+            #updated the old databsee file with new state and elapsed time
+            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""", (str(state), elapsed_time, saveName))
+            conn.commit()
+            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
+            sys.exit()
+
 
     # --- Main command loop ---
     while True:
@@ -103,6 +150,9 @@ def enterProjectRoom3(state):
             result = handle_answer(guess)
             if result:
                 return result
+
+        elif command == "pause":
+            handle_pause(state, saveName, time_played, startTime)
 
         elif command == "quit":
             print("👋 You close your notebook and leave the project behind. Game over.")

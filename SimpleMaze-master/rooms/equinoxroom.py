@@ -7,11 +7,11 @@
 # -----------------------------------------------------------------------------
 import sqlite3
 import sys
-import time
+import time as t
 from math import ceil
 from .utils import chooseNextRoom
 
-def enterEquinoxroom(state, saveName, gtime, startTime):
+def enterEquinoxroom(state, saveName, time_played, startTime):
     if not state["visited"]["equinoxroom"]:
         if "equinox key" not in state["inventory"]:
             print("\n🚪 A man with black robe stands in front of the door")
@@ -111,12 +111,12 @@ def enterEquinoxroom(state, saveName, gtime, startTime):
                 count += 1
         perc = (count / len(state['visited'])) * 100
         print("Save name: ", saveName)
-        print("Time played: ", gtime)
+        print("Time played: ", time_played)
         print(f"{ceil(perc)}% of rooms visited")
 
-    def handle_pause(state, saveName, gtime, startTime):
+    def handle_pause(state, saveName, time_played, startTime):
 
-        endTime = (time.time() - startTime) + gtime
+        elapsed_time = (t.time() - startTime) + time_played
         flag = True
         conn = sqlite3.connect("GameSave.db")
         cursor = conn.cursor()
@@ -129,13 +129,15 @@ def enterEquinoxroom(state, saveName, gtime, startTime):
                     userName = input("save file already exists enter name of save file: ")
                 else:
                     cursor.execute("""INSERT INTO Saves (saveName, state, time) VALUES (?, ?, ?)""",
-                                   (userName, str(state), endTime))
+                                   (userName, str(state), elapsed_time))
                     conn.commit()
+                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
                     sys.exit()
         else:
             cursor.execute("""UPDATE Saves SET state = ? WHERE saveName = ?""", (str(state), saveName))
             conn.commit()
-            cursor.execute("""UPDATE Saves SET time = ? WHERE saveName = ?""", (endTime, saveName))
+            cursor.execute("""UPDATE Saves SET saveTime = ? WHERE saveName = ?""", (elapsed_time, saveName))
+            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
             conn.commit()
 
             sys.exit()
@@ -189,7 +191,7 @@ def enterEquinoxroom(state, saveName, gtime, startTime):
             handle_help()
 
         elif command=="pause":
-            handle_pause(state,saveName,time,startTime)
+            handle_pause(state,saveName,time_played,startTime)
 
         elif command=="status":
             handle_status()
