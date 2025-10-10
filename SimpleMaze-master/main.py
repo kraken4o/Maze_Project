@@ -18,19 +18,6 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 
-"""state = {
-    "current_room": "corridor",
-    "previous_room": "corridor",
-    "visited": {
-        "classroom2015": False,
-        "projectroom3": False,
-        "equinoxroom": False,
-        "classroom2031": False,
-        "teacherroom": False,
-        "storageroom": False,
-    },
-    "inventory": []
-}"""
 
 # Connect to the database (creates GameSave.db if it doesn't exist)
 connection = sqlite3.connect("GameSave.db")
