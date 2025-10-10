@@ -35,24 +35,27 @@ print("*************************************************************************
 # Connect to the database (creates GameSave.db if it doesn't exist)
 connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
+flag = True
+while flag:
 
+    fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ").lower()
 
-fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ").lower()
+    time_played = 0.0
 
-time_played = 0.0
+    crsr.execute("SELECT * FROM saves")
+    saves = crsr.fetchall()
 
-crsr.execute("SELECT * FROM saves")
-saves = crsr.fetchall()
+    #print(saves)
 
-#print(saves)
-
-for i in saves:
-    if fileName in i:
-        state = i[1]
-        state = ast.literal_eval(state)
-        time_played = i[2]
-        print(f"💾 Save file '{fileName}' loaded. Total time played so far: {time_played:.2f} seconds.")
-        break
+    for i in saves:
+        if fileName in i:
+            state = i[1]
+            state = ast.literal_eval(state)
+            time_played = i[2]
+            print(f"💾 Save file '{fileName}' loaded. Total time played so far: {time_played:.2f} seconds.")
+            flag = False
+        else:
+            print("there is no save file with this name.")
 
 startTime = time.time()
 # Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
