@@ -80,14 +80,30 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
             print("Your adventure through logic, memory, and mystery ends here.")
             print("\n🏆 You completed the game! 🏆")
 
-            elapsed_time = (t.time() - startTime) + time_played
             conn = sqlite3.connect("GameSave.db")
             cursor = conn.cursor()
-            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
-                           (str(state), elapsed_time, saveName))
-            conn.commit()
-            print(f"Total playtime: {elapsed_time:.2f} seconds.")
-            sys.exit()
+            elapsed_time = (t.time() - startTime) + time_played
+            if saveName == "no save":
+                # Ask player for a new save file name
+                userName = input("enter name of save file: ")
+                while True:
+                    # Check if the save file already exists
+                    cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
+                    saveList = cursor.fetchall()
+                    if saveList:
+                        userName = input("save file already exists enter name of save file: ")
+                    else:
+                        cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""",
+                                       (userName, str(state), elapsed_time))
+                        conn.commit()
+                        print(f"Total playtime: {elapsed_time:.2f} seconds.")
+                        sys.exit()
+            else:
+                cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
+                               (str(state), elapsed_time, saveName))
+                conn.commit()
+                print(f"Total playtime: {elapsed_time:.2f} seconds.")
+                sys.exit()
         else:
             print("❌ The student shrugs. 'Nope, that one's not it. Think classic.'")
             print("You decide to step out and think it over.")
