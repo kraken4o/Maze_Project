@@ -54,8 +54,6 @@ while flag:
             time_played = i[2]
             print(f"💾 Save file '{fileName}' loaded. Total time played so far: {time_played:.2f} seconds.")
             flag = False
-        else:
-            print("there is no save file with this name.")
 
 startTime = time.time()
 # Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
