@@ -18,7 +18,7 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 
-state = {
+"""state = {
     "current_room": "corridor",
     "previous_room": "corridor",
     "visited": {
@@ -30,20 +30,12 @@ state = {
         "storageroom": False,
     },
     "inventory": []
-}
+}"""
 
 # Connect to the database (creates GameSave.db if it doesn't exist)
 connection = sqlite3.connect("GameSave.db")
 crsr = connection.cursor()
 
-crsr.execute("""
-CREATE TABLE IF NOT EXISTS saves (
-    saveName TEXT PRIMARY KEY,
-    state TEXT,
-    saveTime REAL
-)
-""")
-connection.commit()
 
 fileName = input("what is the name of your save file, if you want to start a new one type \"no save\": ").lower()
 
