@@ -103,31 +103,139 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             print("❌ Incorrect. you wrote the answer but nothing happened perhaps the answer provided was wrong")
             return  ansNum
 
-
     def handle_pause(state, saveName, time_played, startTime):
+        import sqlite3
+        import time
+        import sys
 
-        elapsed_time = (t.time() - startTime) + time_played
-        flag = True
-        conn = sqlite3.connect("GameSave.db")
-        cursor = conn.cursor()
-        if saveName == "no save":
-            userName = input("enter name of save file: ")
-            while flag:
-                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
-                saveList = cursor.fetchall()
-                if saveList:
-                    userName = input("save file already exists enter name of save file: ")
-                else:
-                    cursor.execute("""INSERT INTO Saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
-                    conn.commit()
-                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
-                    sys.exit()
+        # --- Calculate how long the player has been playing for ---
+        # Combine saved play time with current session duration
+        elapsed_time = (time.time() - startTime) + time_played
+
+        # --- Connect to the SQLite database ---
+        conn = sqlite3.connect("NewSave.db")
+        cur = conn.cursor()
+
+        # --- Helper variables ---
+        # These represent the current and previous room names from the in-memory state
+        current_room_name = state.get("current_room")
+        previous_room_name = state.get("previous_room")
+
+        # --- Find the room IDs from the Rooms table ---
+        cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (current_room_name,))
+        row = cur.fetchone()
+        current_id = row[0] if row else None
+
+        cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (previous_room_name,))
+        row = cur.fetchone()
+        previous_id = row[0] if row else None
+
+        # --- If current room not found, stop the save process ---
+        if current_id is None:
+            print(f"❌ Could not find current room '{current_room_name}' in database.")
+            conn.close()
+            return
+
+        # --- Check if user is creating a new save or updating an existing one ---
+        if saveName.strip().lower() == "new save":
+            # Keep asking for a unique save name
+            while True:
+                new_name = input("Enter a unique save name: ").strip()
+                if not new_name:
+                    print("Please enter a name.")
+                    continue
+
+                # Check if save name already exists
+                cur.execute("SELECT 1 FROM Saves WHERE saveName = ?", (new_name,))
+                exists = cur.fetchone()
+                if exists:
+                    print("That name already exists, try another one.")
+                    continue
+
+                # --- Insert a brand new save entry ---
+                cur.execute(
+                    "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
+                    (new_name, current_id, previous_id, float(elapsed_time))
+                )
+
+                # Get the ID of the newly created save
+                save_id = cur.lastrowid
+
+                # --- Update SaveRoomState table to reflect visited rooms ---
+                for room_name, visited in state.get("visited", {}).items():
+                    cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
+                    r = cur.fetchone()
+                    if r:
+                        cur.execute(
+                            "INSERT INTO SaveRoomState (saveId, roomId, visited) VALUES (?, ?, ?)",
+                            (save_id, r[0], 1 if visited else 0)
+                        )
+
+                # --- Update SaveInventory table with player's items ---
+                for item_name in state.get("inventory", []):
+                    cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
+                    i = cur.fetchone()
+                    if i:
+                        cur.execute(
+                            "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
+                            (save_id, i[0])
+                        )
+
+                # Commit all new data to the database
+                conn.commit()
+                print(f"💾 Game saved as '{new_name}' successfully!")
+                print(f"Total playtime: {elapsed_time:.2f} seconds.")
+                conn.close()
+                sys.exit()
+
         else:
-            # updated the old databsee file with new state and elapsed time
-            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
-                           (str(state), elapsed_time, saveName))
+            # --- Update an existing save with the same name ---
+            cur.execute("SELECT saveId FROM Saves WHERE saveName = ?", (saveName,))
+            row = cur.fetchone()
+
+            if row:
+                save_id = row[0]
+            else:
+                # If it doesn't exist, create a new one with that name
+                cur.execute(
+                    "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
+                    (saveName, current_id, previous_id, float(elapsed_time))
+                )
+                save_id = cur.lastrowid
+
+            # --- Update the Saves table ---
+            cur.execute(
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
+                (current_id, previous_id, float(elapsed_time), save_id)
+            )
+
+            # --- Refresh SaveRoomState for this save ---
+            cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (save_id,))
+            for room_name, visited in state.get("visited", {}).items():
+                cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
+                r = cur.fetchone()
+                if r:
+                    cur.execute(
+                        "INSERT INTO SaveRoomState (saveId, roomId, visited) VALUES (?, ?, ?)",
+                        (save_id, r[0], 1 if visited else 0)
+                    )
+
+            # --- Refresh SaveInventory for this save ---
+            cur.execute("DELETE FROM SaveInventory WHERE saveId = ?", (save_id,))
+            for item_name in state.get("inventory", []):
+                cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
+                i = cur.fetchone()
+                if i:
+                    cur.execute(
+                        "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
+                        (save_id, i[0])
+                    )
+
+            # --- Commit changes to the database ---
             conn.commit()
-            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
+            print(f"💾 Save '{saveName}' updated successfully!")
+            print(f"Total playtime: {elapsed_time:.2f} seconds.")
+            conn.close()
             sys.exit()
 
     def handle_status(state, saveName, time_played, startTime):
