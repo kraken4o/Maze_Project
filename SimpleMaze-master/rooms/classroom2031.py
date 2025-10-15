@@ -61,6 +61,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
         print("- pause                : Pause the game.")
+        print("- status               : Show the status of the game.")
 
     def handle_take(item):
         if item == "equinox key":
