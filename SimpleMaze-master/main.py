@@ -7,7 +7,6 @@
 # -----------------------------------------------------------------------------
 import sqlite3
 import time
-import ast
 
 from rooms import enterCorridor, enterStudyLandscape, enterClassroom2015, enterProjectRoom3, enterEquinoxroom, enterClassroom2031,enterTeacherroom, enterStorageroom
 
@@ -18,79 +17,85 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 #--------------------
-# Path to your SQLite database
-db_path = "NewSave.db"
+conn = sqlite3.connect("NewSave.db")
+crsr = conn.cursor()
+fileName = ""
+state = {}
 
-# Connect to the database
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
+flag = True
+while flag:
+    fileName = input("enter the name of your save file if you want to create a file enter \"new save\": ").strip().lower()
 
-# Ask for the save file name
-fileName = input("Enter save file name: ").strip()
+    if fileName == "new save":
+        fileName = input("what would you like to name your file: ").strip().lower()
+        crsr.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (fileName,))
+        fetchedName = crsr.fetchone()
+        if fetchedName:
+            print("there is already a save file with this name")
+        else:
+            state = {'current_room': 'corridor',
+                     'previous_room': 'corridor',
+                     'visited': {'classroom2015': False,
+                                 'projectroom3': False,
+                                 'equinoxroom': False,
+                                 'classroom2031': False,
+                                 'teacherroom': False,
+                                 'storageroom': False,
+                                 'studylandscape': False},
+                     'inventory': []}
+            time_played = 0.0
+            flag = False
+    else:
 
-# 1. Find the save record
-cursor.execute("""
-    SELECT saveId, currentId, previousId, time
-    FROM Saves
-    WHERE saveName = ?
-    LIMIT 1
-""", (fileName,))
-row = cursor.fetchone()
+        crsr.execute("""SELECT saveId FROM Saves WHERE saveName = ?""", (fileName,))
+        something = crsr.fetchone()
+        if something:
+            saveId = something[0]
+        else:
+            continue
 
-if row:
-    save_id, current_id, previous_id, time_played = row
 
-    # 2. Resolve current_room and previous_room names
-    cursor.execute("SELECT roomName FROM Rooms WHERE roomId = ?", (current_id,))
-    current_room_row = cursor.fetchone()
-    current_room = current_room_row[0] if current_room_row else None
+        crsr.execute("""SELECT time FROM saves WHERE saveName = ?""", (fileName,))
+        time_played = crsr.fetchone()[0]
 
-    cursor.execute("SELECT roomName FROM Rooms WHERE roomId = ?", (previous_id,))
-    previous_room_row = cursor.fetchone()
-    previous_room = previous_room_row[0] if previous_room_row else None
 
-    # 3. Build visited dictionary
-    cursor.execute("""
-        SELECT r.roomName, srs.visited
-        FROM SaveRoomState srs
-        JOIN Rooms r ON r.roomId = srs.roomId
-        WHERE srs.saveId = ?
-    """, (save_id,))
-    visited = {room_name: bool(visited_int) for room_name, visited_int in cursor.fetchall()}
+        crsr.execute("""SELECT roomName, roomId FROM Rooms, Saves WHERE roomId = currentId""")
+        currentRoom = crsr.fetchone()[0]
+        currentId = crsr.fetchone()[1]
 
-    # 4. Build inventory list
-    cursor.execute("""
-        SELECT i.itemName
-        FROM SaveInventory si
-        JOIN Items i ON i.itemId = si.itemId
-        WHERE si.saveId = ?
-    """, (save_id,))
-    inventory = [item_name for (item_name,) in cursor.fetchall()]
+        crsr.execute("""SELECT roomName, roomId FROM Rooms, Saves WHERE roomId = previousId""")
+        previousRoom = crsr.fetchone()[0]
+        previousId = crsr.fetchone()[1]
 
-    # 5. Construct state
-    state = {
-        "current_room": current_room,
-        "previous_room": previous_room,
-        "visited": visited,
-        "inventory": inventory
-    }
+        crsr.execute("""
+                SELECT r.roomName, srs.visited
+                FROM SaveRoomState srs
+                JOIN Rooms r ON r.roomId = srs.roomId
+                WHERE srs.saveId = ?
+            """, (saveId,))
+        visited = {room_name: bool(visited_int) for room_name, visited_int in crsr.fetchall()}
 
-    # Print results
-    print("State loaded successfully:\n")
-    print(state)
-    print(f"\nTime played: {time_played}")
 
-else:
-    print(f"No save file named '{fileName}' found in the database.")
+        crsr.execute("""
+                SELECT i.itemName
+                FROM SaveInventory si
+                JOIN Items i ON i.itemId = si.itemId
+                WHERE si.saveId = ?
+            """, (saveId,))
+        inventory = [item_name for (item_name,) in crsr.fetchall()]
 
-# Close connection
-conn.close()
+        state = {
+            "current_room": currentRoom,
+            "previous_room": previousRoom,
+            "visited": visited,
+            "inventory": inventory
+        }
+        flag = False
 
 #------------------
-
-
+# Time in seconds since epoch at the start of the current game instance.
 startTime = time.time()
-# Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
+
 
 while True:
     current = state["current_room"]
