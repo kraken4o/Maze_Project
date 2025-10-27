@@ -3,7 +3,6 @@ import time as t
 import sqlite3
 
 def enterClassroom2031(state, saveName, time_played, startTime):
-    import time
     # --- Check if the player has the key to enter ---
     if not state["visited"]["classroom2031"]:
         if "class key" not in state["inventory"]:
@@ -27,10 +26,10 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
     # iterates through each line in the text file to add each logic puzzle to logicPuzzle list
     for line in puzzleFile:
-        line = line.strip()
+        line = line.strip().replace("\\n", "\n")
         logicPuzzle.append(line)
 
-    logicAnswer = ["three", "friday", "thursday"]
+    logicAnswer = ["friday", "thursday", "wednesday"]
     answerNum = 0
 
     def handle_look(questionList):
@@ -108,7 +107,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
         # --- Calculate how long the player has been playing for ---
         # Combine saved play time with current session duration
-        elapsed_time = (time.time() - startTime) + time_played
+        elapsed_time = (t.time() - startTime) + time_played
 
         conn = sqlite3.connect("NewSave.db")
         cur = conn.cursor()
