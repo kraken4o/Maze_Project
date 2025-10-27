@@ -24,7 +24,7 @@ state = {}
 
 flag = True
 while flag:
-    fileName = input("enter the name of your save file if you want to create a file enter \"new save\": ").strip()
+    fileName = input("what is the name of your save file? if you want to create a file enter \"new save\": ").strip()
 
     if fileName == "new save":
         fileName = input("what would you like to name your file: ").strip()

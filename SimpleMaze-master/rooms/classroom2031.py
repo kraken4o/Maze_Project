@@ -61,6 +61,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         print("- quit                : Quit the game entirely.")
         print("- pause                : Pause the game.")
         print("- status               : Show the status of the game.")
+        print(f"- current inventory    : {state['inventory']} ")
 
     def handle_take(item):
         if item == "equinox key":
@@ -76,11 +77,11 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             print(f"There is no '{item}' here to take.")
 
     def handle_go(destination):
-        if destination in ["corridor", "back"] and input("enter the pin into the door: ") == "354": #asks for the pin code to the door
+        if destination in ["corridor", "back"] and input("enter the pin into the door: ") == "543": #asks for the pin code to the door
             print("🚪 You open the door and step back into the corridor.")
             return "corridor" # lets you out of the room if the door code is correct
         elif destination in ["corridor", "back"] :
-            print(f"❌ the code was wrong.")
+            print(f"❌ the code was wrong. Maybe the answer lies in from the questions given???")
             return None
         else:
             print(f"❌ You can't go to '{destination}' from here.")
