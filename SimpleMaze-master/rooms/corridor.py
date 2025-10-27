@@ -47,12 +47,11 @@ def enterCorridor(state, saveName, time_played, startTime):
             return None
 
     def handle_pause(state, saveName, time_played, startTime):
-
         # --- Calculate how long the player has been playing for ---
         # Combine saved play time with current session duration
         elapsed_time = (t.time() - startTime) + time_played
 
-        conn = sqlite3.connect("newsave.db")
+        conn = sqlite3.connect("NewSave.db")
         cur = conn.cursor()
 
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))

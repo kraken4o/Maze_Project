@@ -24,10 +24,10 @@ state = {}
 
 flag = True
 while flag:
-    fileName = input("enter the name of your save file if you want to create a file enter \"new save\": ").strip().lower()
+    fileName = input("enter the name of your save file if you want to create a file enter \"new save\": ").strip()
 
     if fileName == "new save":
-        fileName = input("what would you like to name your file: ").strip().lower()
+        fileName = input("what would you like to name your file: ").strip()
         crsr.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (fileName,))
         fetchedName = crsr.fetchone()
         if fetchedName:
@@ -52,6 +52,7 @@ while flag:
         if something:
             saveId = something[0]
         else:
+            print("there is no save file with this name")
             continue
 
 
@@ -59,13 +60,15 @@ while flag:
         time_played = crsr.fetchone()[0]
 
 
-        crsr.execute("""SELECT roomName, roomId FROM Rooms, Saves WHERE roomId = currentId""")
-        currentRoom = crsr.fetchone()[0]
-        currentId = crsr.fetchone()[1]
+        crsr.execute("""SELECT roomName, roomId FROM Rooms, Saves WHERE roomId = currentId AND saveId = ?""", (saveId,))
+        currentRoomData = crsr.fetchone()
+        currentRoom = currentRoomData[0]
+        currentId = currentRoomData[1]
 
-        crsr.execute("""SELECT roomName, roomId FROM Rooms, Saves WHERE roomId = previousId""")
-        previousRoom = crsr.fetchone()[0]
-        previousId = crsr.fetchone()[1]
+        crsr.execute("""SELECT roomName, roomId FROM Rooms, Saves WHERE roomId = previousId AND saveId = ?""", (saveId,))
+        previousRoomData = crsr.fetchone()
+        previousRoom = previousRoomData[0]
+        previousId = previousRoomData[1]
 
         crsr.execute("""
                 SELECT r.roomName, srs.visited
@@ -95,6 +98,7 @@ while flag:
 #------------------
 # Time in seconds since epoch at the start of the current game instance.
 startTime = time.time()
+print(state)
 
 
 while True:

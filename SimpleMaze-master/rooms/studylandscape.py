@@ -47,39 +47,90 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
             return None
 
     def handle_pause(state, saveName, time_played, startTime):
-    # state: the dictionary storing current room, previous room, inventory, and visited rooms
-    #saveName: the name of the save file (or "no save" if it's a new game)
-    #time_played: total time played in previous sessions (in seconds)
-        flag = True
-        conn = sqlite3.connect("GameSave.db")
-        cursor = conn.cursor()
-
-        #elapsed time is the total time accross all sessions
+        # state: the dictionary storing current room, previous room, inventory, and visited rooms
+        #saveName: the name of the save file (or "no save" if it's a new game)
+        #time_played: total time played in previous sessions (in seconds)
         elapsed_time = (t.time() - startTime) + time_played
-        #t.time() here is the seconds since the epoch(Jan 1, 1970) when you hit pause
-        #Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
-        #time played adds the previous to the current seconds played ofn the same file
-        if saveName == "no save":
-            # Ask player for a new save file name
-            userName = input("enter name of save file: ")
-            while flag:
-                # Check if the save file already exists
-                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
-                saveList = cursor.fetchall()
-                if saveList:
-                    userName = input("save file already exists enter name of save file: ")
-                else:
-                    cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
-                    #new file adds states and elapsedtime
-                    conn.commit()
-                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
-                    sys.exit()
+        flag = True
+        conn = sqlite3.connect("NewSave.db")
+        cur = conn.cursor()
+
+        # collect relavant IDs of the rooms in the current game file being played
+        cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
+        currentId = cur.fetchone()[0]
+
+        cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["previous_room"],))
+        previousId = cur.fetchone()[0]
+
+        cur.execute("""SELECT saveId FROM Saves WHERE saveName = ?""", (saveName,))
+        saveId = cur.fetchone()
+
+        if saveId:
+            saveId = saveId[0]
+
+            #  if there is already a saveID that has the current save name it updates the rooms and time played
+            cur.execute(
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), saveId)
+            )
+
+            # deletes all room states for a save id and iterates through the state of each room and adds it back in
+            cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (saveId,))
+            for room_name, visited in state.get("visited", {}).items():
+                cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
+                r = cur.fetchone()
+                if r:
+                    cur.execute(
+                        "INSERT INTO SaveRoomState (saveId, roomId, visited) VALUES (?, ?, ?)",
+                        (saveId, r[0], 1 if visited else 0)
+                    )
+
+            # deletes all items from inventory for a save id and iterates through the current files inventory and adds it back in
+            cur.execute("DELETE FROM SaveInventory WHERE saveId = ?", (saveId,))
+            for item_name in state.get("inventory", []):
+                cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
+                i = cur.fetchone()
+                if i:
+                    cur.execute(
+                        "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
+                        (saveId, i[0])
+                    )
+
+
         else:
-            #updated the old databsee file with new state and elapsed time
-            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""", (str(state), elapsed_time, saveName))
-            conn.commit()
-            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
-            sys.exit()
+            # If it doesn't exist, create a new one with that name
+            cur.execute(
+                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time))
+            )
+            save_id = cur.lastrowid
+
+            # --- Update SaveRoomState table to reflect visited rooms ---
+            for room_name, visited in state.get("visited", {}).items():
+                cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
+                r = cur.fetchone()
+                if r:
+                    cur.execute(
+                        "INSERT INTO SaveRoomState (saveId, roomId, visited) VALUES (?, ?, ?)",
+                        (save_id, r[0], 1 if visited else 0)
+                    )
+
+            # --- Update SaveInventory table with player's items ---
+            for item_name in state.get("inventory", []):
+                cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
+                i = cur.fetchone()
+                if i:
+                    cur.execute(
+                        "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
+                        (save_id, i[0])
+                    )
+
+        # --- Commit changes to the database ---
+        conn.commit()
+        print(f"💾 Save '{saveName}' updated successfully!")
+        print(f"Total playtime: {elapsed_time:.2f} seconds.")
+        conn.close()
+        sys.exit()
 
     # --- Main command loop ---
     while True:

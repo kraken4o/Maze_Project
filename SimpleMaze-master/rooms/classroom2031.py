@@ -104,15 +104,16 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             print("❌ Incorrect. you wrote the answer but nothing happened perhaps the answer provided was wrong")
             return  ansNum
 
-    def handle_pause(state, saveName, time_played, startTime):
+    def handle_pause(state, saveName):
 
         # --- Calculate how long the player has been playing for ---
         # Combine saved play time with current session duration
         elapsed_time = (time.time() - startTime) + time_played
 
-        conn = sqlite3.connect("newsave.db")
+        conn = sqlite3.connect("NewSave.db")
         cur = conn.cursor()
 
+        # collect relavant IDs of the rooms in the current game file being played
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
         currentId = cur.fetchone()[0]
 
@@ -125,13 +126,13 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         if saveId:
             saveId = saveId[0]
 
-            # --- Update the Saves table ---
+            #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
                 "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
                 (currentId, previousId, float(elapsed_time), saveId)
             )
 
-            # --- Refresh SaveRoomState for this save ---
+            # deletes all room states for a save id and iterates through the state of each room and adds it back in
             cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (saveId,))
             for room_name, visited in state.get("visited", {}).items():
                 cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
@@ -142,7 +143,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
                         (saveId, r[0], 1 if visited else 0)
                     )
 
-            # --- Refresh SaveInventory for this save ---
+            # deletes all items from inventory for a save id and iterates through the current files inventory and adds it back in
             cur.execute("DELETE FROM SaveInventory WHERE saveId = ?", (saveId,))
             for item_name in state.get("inventory", []):
                 cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
@@ -194,7 +195,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
 
 
-    def handle_status(state, saveName, time_played, startTime):
+    def handle_status(state, saveName):
 
         elapsed_time = (t.time() - startTime) + time_played
         completed = 0
@@ -238,10 +239,10 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             answerNum = handle_answer(answer, logicAnswer, answerNum, logicPuzzle)
 
         elif command == "pause":
-            handle_pause(state, saveName, time_played, startTime)
+            handle_pause(state, saveName)
 
         elif command == "status":
-            handle_status(state)
+            handle_status(state, saveName)
 
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
