@@ -5,6 +5,7 @@
 # Location: Delft
 # Date: September 2025
 # -----------------------------------------------------------------------------
+
 import sqlite3
 import sys
 import time as t
@@ -71,9 +72,12 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
         else:
             print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
-        print("- status              : Show game status")
+        print("- status              : Show game status.")
         print("- pause               : Pause the game.")
+        print("- scoreboard          : Show top 5 scores.")
         print("- quit                : Quit the game entirely.")
+        print(f"- current inventory  : {state['inventory']}")
+
 
     def handle_take(item):
         if item == "project key":
@@ -105,24 +109,47 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
             print(f"❌ You can't go to '{destination}' from here.")
 
     def handle_status():
-        count = 0  # Initialize inside the function
-        for room, visited in state["visited"].items():
-            if visited:
-                count += 1
-        perc = (count / len(state['visited'])) * 100
-        print("Save name: ", saveName)
-        print("Time played: ", time_played)
-        print(f"{ceil(perc)}% of rooms visited")
-
-    def handle_pause(state, saveName, time_played, startTime):
-
         elapsed_time = (t.time() - startTime) + time_played
-        flag = True
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i]:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print("you have completed " + str(percentplayed) + "% of the gate")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+    def handle_scoreboard():
+
         conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
 
-        # collect relavant IDs of the rooms in the current game file being played
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top n records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
+    def handle_pause():
+
+        # --- Calculate how long the player has been playing for ---
+        # Combine saved play time with current session duration
+        percentComplete, elapsed_time = handle_status()
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        # collect relevant IDs of the rooms in the current game file being played
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
         currentId = cur.fetchone()[0]
 
@@ -137,8 +164,8 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
 
             #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete), saveId)
             )
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
@@ -162,13 +189,11 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
                         "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
                         (saveId, i[0])
                     )
-
-
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time, completion) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -198,6 +223,7 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
         print(f"Total playtime: {elapsed_time:.2f} seconds.")
         conn.close()
         sys.exit()
+
 
 
     # --- Extra state for the vending machine puzzle ---
@@ -248,10 +274,13 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
             handle_help()
 
         elif command=="pause":
-            handle_pause(state,saveName,time_played,startTime)
+            handle_pause()
 
         elif command=="status":
             handle_status()
+
+        elif command=="scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("take "):
             item = command[5:].strip()
@@ -265,7 +294,7 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
 
         elif command.startswith("answer "):
             answer = command[7:].strip()
-            result = handle_answer(answer)
+            handle_answer(answer)
             if result:
                 return result
 
