@@ -1,3 +1,3 @@
-There are two ducks in front of a duck, two ducks behind a duck and a duck in the middle. How many ducks are there?
 The day before two days after the day before tomorrow is Saturday. What day is it today?
-A girl meets a lion and unicorn in the forest. The lion lies every Monday, Tuesday and Wednesday, and the other days, he speaks the truth.The unicorn lies on Thursdays, Fridays and Saturdays, and the other days of the week, he speaks the truth. “Yesterday, I was lying,” the lion told the girl. “So was I,” said the unicorn. What day is it?
+A girl meets a lion and unicorn in the forest. \nThe lion lies every Monday, Tuesday and Wednesday, and the other days, he speaks the truth.\nThe unicorn lies on Thursdays, Fridays and Saturdays, and the other days of the week, he speaks the truth.\n “Yesterday, I was lying,” the lion told the girl. “So was I,” said the unicorn.\n What day is it?
+Exactly two of the following statements about today are true: \n1. It is a weekend.\n 2. It is exactly three days before a weekend. \n3. Today’s name begins with the letter T.\n4. Today is one of the middle three days of the week.\n What day is it?

@@ -55,6 +55,9 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game completely.")
         print("- pause                : Pause the game.")
+        print("- status              : Show the status of the game.")
+        print("- scoreboard           : shows top 5 scores")
+        print(f"- current inventory    : {state['inventory']} ")
 
     def handle_go(destination):
         """Handle movement out of the room."""
@@ -80,69 +83,128 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
             print("Your adventure through logic, memory, and mystery ends here.")
             print("\n🏆 You completed the game! 🏆")
 
-            conn = sqlite3.connect("GameSave.db")
-            cursor = conn.cursor()
-            elapsed_time = (t.time() - startTime) + time_played
-            if saveName == "no save":
-                # Ask player for a new save file name
-                userName = input("enter name of save file: ")
-                while True:
-                    # Check if the save file already exists
-                    cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
-                    saveList = cursor.fetchall()
-                    if saveList:
-                        userName = input("save file already exists enter name of save file: ")
-                    else:
-                        cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""",
-                                       (userName, str(state), elapsed_time))
-                        conn.commit()
-                        print(f"Total playtime: {elapsed_time:.2f} seconds.")
-                        sys.exit()
-            else:
-                cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""",
-                               (str(state), elapsed_time, saveName))
-                conn.commit()
-                print(f"Total playtime: {elapsed_time:.2f} seconds.")
-                sys.exit()
-        else:
-            print("❌ The student shrugs. 'Nope, that one's not it. Think classic.'")
-            print("You decide to step out and think it over.")
-            return "corridor"
+            handle_pause()
+            handle_scoreboard()
 
-    def handle_pause(state, saveName, time_played, startTime):
-    # state: the dictionary storing current room, previous room, inventory, and visited rooms
-    #saveName: the name of the save file (or "no save" if it's a new game)
-    #time_played: total time played in previous sessions (in seconds)
-        flag = True
+
+    def handle_pause():
+
+        percentComplete, elapsed_time = handle_status()
+
         conn = sqlite3.connect("GameSave.db")
-        cursor = conn.cursor()
-
-        #elapsed time is the total time accross all sessions
+        cur = conn.cursor()
         elapsed_time = (t.time() - startTime) + time_played
-        #t.time() here is the seconds since the epoch(Jan 1, 1970) when you hit pause
-        #Starttime is in the main function and is also the seconds since the epoch but was taken earlier, when you enter your file to run the game.
-        #time played adds the previous to the current seconds played ofn the same file
-        if saveName == "no save":
-            # Ask player for a new save file name
-            userName = input("enter name of save file: ")
-            while flag:
-                # Check if the save file already exists
-                cursor.execute("""SELECT saveName FROM saves WHERE saveName = ?""", (userName,))
-                saveList = cursor.fetchall()
-                if saveList:
-                    userName = input("save file already exists enter name of save file: ")
-                else:
-                    cursor.execute("""INSERT INTO saves (saveName, state, saveTime) VALUES (?, ?, ?)""", (userName, str(state), elapsed_time))
-                    #new file adds states and elapsedtime
-                    conn.commit()
-                    print(f"💾 Game saved successfully! Total playtime: {elapsed_time:.2f} seconds.")
-                    sys.exit()
+
+        # collect relavant IDs of the rooms in the current game file being played
+        cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
+        currentId = cur.fetchone()[0]
+
+        cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["previous_room"],))
+        previousId = cur.fetchone()[0]
+
+        cur.execute("""SELECT saveId FROM Saves WHERE saveName = ?""", (saveName,))
+        saveId = cur.fetchone()
+
+        if saveId:
+            saveId = saveId[0]
+
+            #  if there is already a saveID that has the current save name it updates the rooms and time played
+            cur.execute(
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete) , saveId)
+            )
+
+            # deletes all room states for a save id and iterates through the state of each room and adds it back in
+            cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (saveId,))
+            for room_name, visited in state.get("visited", {}).items():
+                cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
+                r = cur.fetchone()
+                if r:
+                    cur.execute(
+                        "INSERT INTO SaveRoomState (saveId, roomId, visited) VALUES (?, ?, ?)",
+                        (saveId, r[0], 1 if visited else 0)
+                    )
+
+            # deletes all items from inventory for a save id and iterates through the current files inventory and adds it back in
+            cur.execute("DELETE FROM SaveInventory WHERE saveId = ?", (saveId,))
+            for item_name in state.get("inventory", []):
+                cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
+                i = cur.fetchone()
+                if i:
+                    cur.execute(
+                        "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
+                        (saveId, i[0])
+                    )
+
+
         else:
-            #updated the old databsee file with new state and elapsed time
-            cursor.execute("""UPDATE Saves SET state = ?, saveTime = ? WHERE saveName = ?""", (str(state), elapsed_time, saveName))
-            conn.commit()
-            print(f"💾 Game updated successfully! Total playtime: {elapsed_time:.2f} seconds.")
-            sys.exit()
+            # If it doesn't exist, create a new one with that name
+            cur.execute(
+                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
+            )
+            save_id = cur.lastrowid
+
+            # --- Update SaveRoomState table to reflect visited rooms ---
+            for room_name, visited in state.get("visited", {}).items():
+                cur.execute("SELECT roomId FROM Rooms WHERE roomName = ?", (room_name,))
+                r = cur.fetchone()
+                if r:
+                    cur.execute(
+                        "INSERT INTO SaveRoomState (saveId, roomId, visited) VALUES (?, ?, ?)",
+                        (save_id, r[0], 1 if visited else 0)
+                    )
+
+            # --- Update SaveInventory table with player's items ---
+            for item_name in state.get("inventory", []):
+                cur.execute("SELECT itemId FROM Items WHERE itemName = ?", (item_name,))
+                i = cur.fetchone()
+                if i:
+                    cur.execute(
+                        "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
+                        (save_id, i[0])
+                    )
+
+        # --- Commit changes to the database ---
+        conn.commit()
+        print(f"💾 Save '{saveName}' updated successfully!")
+        print(f"Total playtime: {elapsed_time:.2f} seconds.")
+        conn.close()
+
+    def handle_status():
+
+        elapsed_time = (t.time() - startTime) + time_played
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i] == True:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print("you have completed " + str(percentplayed) + "% of the gate")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+    def handle_scoreboard():
+
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top 5 records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
 
 
     # --- Main command loop ---
@@ -154,6 +216,16 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
 
         elif command == "?":
             handle_help()
+
+        elif command == "pause":
+            handle_pause()
+            sys.exit()
+
+        elif command == "status":
+            handle_status()
+
+        elif command == "scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("go "):
             destination = command[3:].strip()
@@ -167,8 +239,7 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
             if result:
                 return result
 
-        elif command == "pause":
-            handle_pause(state, saveName, time_played, startTime)
+
 
         elif command == "quit":
             print("👋 You close your notebook and leave the project behind. Game over.")
