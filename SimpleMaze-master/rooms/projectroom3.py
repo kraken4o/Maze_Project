@@ -86,7 +86,7 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
         # state: the dictionary storing current room, previous room, inventory, and visited rooms
         #saveName: the name of the save file (or "no save" if it's a new game)
         #time_played: total time played in previous sessions (in seconds)
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
         elapsed_time = (t.time() - startTime) + time_played
 

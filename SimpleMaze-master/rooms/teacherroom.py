@@ -94,7 +94,7 @@ def enterTeacherroom(state, saveName, time_played, startTime):
 
         elapsed_time = (t.time() - startTime) + time_played
         flag = True
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
 

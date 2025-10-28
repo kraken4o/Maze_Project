@@ -51,7 +51,7 @@ def enterCorridor(state, saveName, time_played, startTime):
         # Combine saved play time with current session duration
         elapsed_time = (t.time() - startTime) + time_played
 
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))

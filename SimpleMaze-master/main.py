@@ -17,7 +17,7 @@ print("*    You may need to solve challenges to collect items and unlock rooms. 
 print("*               Once you've visited all rooms, you win!                    *")
 print("****************************************************************************")
 #--------------------
-conn = sqlite3.connect("NewSave.db")
+conn = sqlite3.connect("GameSave.db")
 crsr = conn.cursor()
 fileName = ""
 state = {}

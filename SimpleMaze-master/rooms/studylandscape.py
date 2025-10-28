@@ -52,7 +52,7 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
         #time_played: total time played in previous sessions (in seconds)
         elapsed_time = (t.time() - startTime) + time_played
         flag = True
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
         # collect relavant IDs of the rooms in the current game file being played

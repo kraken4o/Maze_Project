@@ -111,7 +111,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         # Combine saved play time with current session duration
         percentComplete, elapsed_time = handle_status()
 
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
         # collect relavant IDs of the rooms in the current game file being played
@@ -217,7 +217,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
     def handle_scoreboard():
 
 
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
         cur.execute("SELECT saveName, time, completion FROM saves")

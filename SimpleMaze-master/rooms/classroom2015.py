@@ -96,7 +96,7 @@ def enterClassroom2015(state, saveName,time_played,startTime):
 
         elapsed_time = (t.time() - startTime) + time_played
         flag = True
-        conn = sqlite3.connect("NewSave.db")
+        conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
         # collect relavant IDs of the rooms in the current game file being played
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
