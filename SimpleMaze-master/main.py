@@ -44,6 +44,7 @@ while flag:
                                  'studylandscape': False},
                      'inventory': []}
             time_played = 0.0
+            percentPlayed = 0.0
             flag = False
     else:
 
@@ -87,6 +88,9 @@ while flag:
             """, (saveId,))
         inventory = [item_name for (item_name,) in crsr.fetchall()]
 
+        crsr.execute("""SELECT completion FROM saves WHERE saveId = ?""", (saveId,))
+        percentPlayed = crsr.fetchone()[0]
+
         state = {
             "current_room": currentRoom,
             "previous_room": previousRoom,
@@ -99,6 +103,8 @@ while flag:
 # Time in seconds since epoch at the start of the current game instance.
 startTime = time.time()
 print(state)
+print(time_played)
+print(percentPlayed)
 
 
 while True:

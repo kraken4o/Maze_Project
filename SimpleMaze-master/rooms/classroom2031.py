@@ -62,6 +62,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         print("- pause                : Pause the game.")
         print("- status               : Show the status of the game.")
         print(f"- current inventory    : {state['inventory']} ")
+        print("- scoreboard            : Shows top 5 scores")
 
     def handle_take(item):
         if item == "equinox key":
@@ -104,11 +105,11 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             print("❌ Incorrect. you wrote the answer but nothing happened perhaps the answer provided was wrong")
             return  ansNum
 
-    def handle_pause(state, saveName):
+    def handle_pause():
 
         # --- Calculate how long the player has been playing for ---
         # Combine saved play time with current session duration
-        elapsed_time = (t.time() - startTime) + time_played
+        percentComplete, elapsed_time = handle_status()
 
         conn = sqlite3.connect("NewSave.db")
         cur = conn.cursor()
@@ -131,6 +132,8 @@ def enterClassroom2031(state, saveName, time_played, startTime):
                 "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
                 (currentId, previousId, float(elapsed_time), saveId)
             )
+
+            cur.execute("UPDATE Saves SET completion = ? WHERE saveId = ?", (percentComplete, saveId))
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
             cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (saveId,))
@@ -158,8 +161,8 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time, completion) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -195,7 +198,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
 
 
-    def handle_status(state, saveName):
+    def handle_status():
 
         elapsed_time = (t.time() - startTime) + time_played
         completed = 0
@@ -204,9 +207,34 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             totalgame += 1
             if state["visited"][i] == True:
                 completed += 1
+        percentplayed = completed / totalgame * 100
         print(saveName, ":")
-        print("you have completed " + str((completed/totalgame)*100) + "% of the gate")
+        print("you have completed " + str(percentplayed) + "% of the gate")
         print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+
+    def handle_scoreboard():
+
+
+        conn = sqlite3.connect("NewSave.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+        print(completionList)
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top N records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
+
 
 
 
@@ -239,10 +267,13 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             answerNum = handle_answer(answer, logicAnswer, answerNum, logicPuzzle)
 
         elif command == "pause":
-            handle_pause(state, saveName)
+            handle_pause()
 
         elif command == "status":
-            handle_status(state, saveName)
+            percentComplete = handle_status()
+
+        elif command == "scoreboard":
+            handle_scoreboard()
 
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")
