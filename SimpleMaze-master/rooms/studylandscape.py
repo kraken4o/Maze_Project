@@ -34,7 +34,10 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
         print("- go corridor / back  : Return to the main corridor.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game.")
-        print("- pause                : Pause the game.")
+        print("- status              : Show game status.")
+        print("- pause               : Pause the game.")
+        print("- scoreboard          : Show top 5 scores.")
+        print(f"- current inventory  : {state['inventory']}")
 
     def handle_go(destination):
         """Handle movement to another room."""
@@ -46,16 +49,48 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
             print(f"❌ You can't go to '{destination}' from here.")
             return None
 
-    def handle_pause(state, saveName, time_played, startTime):
-        # state: the dictionary storing current room, previous room, inventory, and visited rooms
-        #saveName: the name of the save file (or "no save" if it's a new game)
-        #time_played: total time played in previous sessions (in seconds)
+    def handle_status():
         elapsed_time = (t.time() - startTime) + time_played
-        flag = True
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i]:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print("you have completed " + str(percentplayed) + "% of the gate")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+    def handle_scoreboard():
+
         conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
-        # collect relavant IDs of the rooms in the current game file being played
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top n records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
+    def handle_pause():
+
+        # --- Calculate how long the player has been playing for ---
+        # Combine saved play time with current session duration
+        percentComplete, elapsed_time = handle_status()
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        # collect relevant IDs of the rooms in the current game file being played
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
         currentId = cur.fetchone()[0]
 
@@ -70,8 +105,8 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
 
             #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete), saveId)
             )
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
@@ -95,13 +130,11 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
                         "INSERT INTO SaveInventory (saveId, itemId) VALUES (?, ?)",
                         (saveId, i[0])
                     )
-
-
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time, completion) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -143,7 +176,13 @@ def enterStudyLandscape(state, saveName, time_played, startTime):
             handle_help()
 
         elif command == "pause":
-            handle_pause(state, saveName, time_played, startTime)
+            handle_pause()
+
+        elif command=="status":
+            handle_status()
+
+        elif command=="scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("go "):
             destination = command[3:].strip()
