@@ -61,8 +61,8 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         print("- quit                : Quit the game entirely.")
         print("- pause                : Pause the game.")
         print("- status               : Show the status of the game.")
-        print(f"- current inventory    : {state['inventory']} ")
         print("- scoreboard            : Shows top 5 scores")
+        print(f"- current inventory    : {state['inventory']} ")
 
     def handle_take(item):
         if item == "equinox key":
@@ -82,7 +82,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             print("🚪 You open the door and step back into the corridor.")
             return "corridor" # lets you out of the room if the door code is correct
         elif destination in ["corridor", "back"] :
-            print(f"❌ the code was wrong. Maybe the answer lies in from the questions given???")
+            print(f"❌ the code was wrong. Maybe the answer lies in the questions given???")
             return None
         else:
             print(f"❌ You can't go to '{destination}' from here.")
@@ -114,7 +114,7 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
-        # collect relavant IDs of the rooms in the current game file being played
+        # collect relevant IDs of the rooms in the current game file being played
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
         currentId = cur.fetchone()[0]
 
@@ -129,11 +129,10 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
             #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete) , saveId)
             )
 
-            cur.execute("UPDATE Saves SET completion = ? WHERE saveId = ?", (percentComplete, saveId))
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
             cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (saveId,))
@@ -197,7 +196,6 @@ def enterClassroom2031(state, saveName, time_played, startTime):
         sys.exit()
 
 
-
     def handle_status():
 
         elapsed_time = (t.time() - startTime) + time_played
@@ -222,22 +220,16 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
         cur.execute("SELECT saveName, time, completion FROM saves")
         completionList = cur.fetchall()
-        print(completionList)
 
         sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
 
-        # Get top N records
+        # Get top n records
         top_scores = sorted_records[:5]
 
         # Print results
         print("Top Scores:")
         for name, time, percent in top_scores:
             print(f"Name: {name}, Time: {time}, Percent: {percent}%")
-
-
-
-
-
 
 
 
@@ -251,6 +243,15 @@ def enterClassroom2031(state, saveName, time_played, startTime):
 
         elif command == "?":
             handle_help()
+
+        elif command == "pause":
+            handle_pause()
+
+        elif command == "status":
+            handle_status()
+
+        elif command == "scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("take "):
             item = command[5:].strip()
@@ -266,14 +267,6 @@ def enterClassroom2031(state, saveName, time_played, startTime):
             answer = command[7:].strip()
             answerNum = handle_answer(answer, logicAnswer, answerNum, logicPuzzle)
 
-        elif command == "pause":
-            handle_pause()
-
-        elif command == "status":
-            percentComplete = handle_status()
-
-        elif command == "scoreboard":
-            handle_scoreboard()
 
         elif command == "quit":
             print("👋 You drop your backpack, leave the maze behind, and step back into the real world.")

@@ -55,6 +55,9 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game completely.")
         print("- pause                : Pause the game.")
+        print("- status              : Show the status of the game.")
+        print("- scoreboard           : shows top 5 scores")
+        print(f"- current inventory    : {state['inventory']} ")
 
     def handle_go(destination):
         """Handle movement out of the room."""
@@ -81,11 +84,13 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
             print("\n🏆 You completed the game! 🏆")
 
             handle_pause()
+            handle_scoreboard()
+
 
     def handle_pause():
-        # state: the dictionary storing current room, previous room, inventory, and visited rooms
-        #saveName: the name of the save file (or "no save" if it's a new game)
-        #time_played: total time played in previous sessions (in seconds)
+
+        percentComplete, elapsed_time = handle_status()
+
         conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
         elapsed_time = (t.time() - startTime) + time_played
@@ -105,8 +110,8 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
 
             #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete) , saveId)
             )
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
@@ -135,8 +140,8 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -166,6 +171,40 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
         print(f"Total playtime: {elapsed_time:.2f} seconds.")
         conn.close()
 
+    def handle_status():
+
+        elapsed_time = (t.time() - startTime) + time_played
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i] == True:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print("you have completed " + str(percentplayed) + "% of the gate")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+    def handle_scoreboard():
+
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top 5 records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
 
 
     # --- Main command loop ---
@@ -177,6 +216,16 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
 
         elif command == "?":
             handle_help()
+
+        elif command == "pause":
+            handle_pause()
+            sys.exit()
+
+        elif command == "status":
+            handle_status()
+
+        elif command == "scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("go "):
             destination = command[3:].strip()
@@ -190,9 +239,7 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
             if result:
                 return result
 
-        elif command == "pause":
-            handle_pause()
-            sys.exit()
+
 
         elif command == "quit":
             print("👋 You close your notebook and leave the project behind. Game over.")

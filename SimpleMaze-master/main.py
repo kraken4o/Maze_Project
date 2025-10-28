@@ -102,9 +102,7 @@ while flag:
 #------------------
 # Time in seconds since epoch at the start of the current game instance.
 startTime = time.time()
-print(state)
-print(time_played)
-print(percentPlayed)
+
 
 
 while True:

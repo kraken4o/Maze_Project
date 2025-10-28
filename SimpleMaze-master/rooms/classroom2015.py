@@ -48,6 +48,8 @@ def enterClassroom2015(state, saveName,time_played,startTime):
         print("- pause               : Pause the game.")
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
+        print("- scoreboard            : Shows top 5 scores")
+        print(f"- current inventory    : {state['inventory']} ")
 
     def handle_take(item):
         if item == "storage_key":
@@ -83,16 +85,23 @@ def enterClassroom2015(state, saveName,time_played,startTime):
             return "corridor"
 
     def handle_status():
-        count = 0  # Initialize inside the function
-        for room, visited in state["visited"].items():
-            if visited:
-                count += 1
-        perc = (count / len(state['visited'])) * 100
-        print("Save name: ",saveName)
-        print("Time played: ",time_played)
-        print(f"{ceil(perc)}% of rooms visited")
 
-    def handle_pause(state, saveName, time_played, startTime):
+        elapsed_time = (t.time() - startTime) + time_played
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i] == True:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print("you have completed " + str(percentplayed) + "% of the gate")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+    def handle_pause():
+
+        percentComplete, elapsed_time = handle_status()
 
         elapsed_time = (t.time() - startTime) + time_played
         flag = True
@@ -113,8 +122,8 @@ def enterClassroom2015(state, saveName,time_played,startTime):
 
             #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time),float(percentComplete),  saveId)
             )
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
@@ -143,8 +152,8 @@ def enterClassroom2015(state, saveName,time_played,startTime):
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -175,6 +184,26 @@ def enterClassroom2015(state, saveName,time_played,startTime):
         conn.close()
         sys.exit()
 
+    def handle_scoreboard():
+
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top N records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
+
     # --- Commandoloop ---
     while True:
         command = input("\n> ").strip().lower()
@@ -189,7 +218,10 @@ def enterClassroom2015(state, saveName,time_played,startTime):
             handle_status()
 
         elif command=="pause":
-            handle_pause(state,saveName,time_played,startTime)
+            handle_pause()
+
+        elif command=="scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("take "):
             item = command[5:].strip()

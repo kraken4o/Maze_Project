@@ -34,6 +34,9 @@ def enterCorridor(state, saveName, time_played, startTime):
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game.")
         print("- pause                : Pause the game.")
+        print("- status              : shows status of game")
+        print("- scoreboard            : Shows top 5 scores")
+        print(f"- current inventory    : {state['inventory']} ")
 
     def handle_go(room_name):
         """Move to a listed room."""
@@ -46,10 +49,9 @@ def enterCorridor(state, saveName, time_played, startTime):
             print(f"❌ '{room_name}' is not a valid exit. Use 'look around' to see available options.")
             return None
 
-    def handle_pause(state, saveName, time_played, startTime):
-        # --- Calculate how long the player has been playing for ---
-        # Combine saved play time with current session duration
-        elapsed_time = (t.time() - startTime) + time_played
+    def handle_pause():
+
+        percentComplete, elapsed_time = handle_status()
 
         conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
@@ -68,8 +70,8 @@ def enterCorridor(state, saveName, time_played, startTime):
 
             # --- Update the Saves table ---
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete), saveId)
             )
 
             # --- Refresh SaveRoomState for this save ---
@@ -98,8 +100,8 @@ def enterCorridor(state, saveName, time_played, startTime):
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time, completion) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -130,6 +132,41 @@ def enterCorridor(state, saveName, time_played, startTime):
         conn.close()
         sys.exit()
 
+    def handle_status():
+
+        elapsed_time = (t.time() - startTime) + time_played
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i] == True:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print("you have completed " + str(percentplayed) + "% of the gate")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+    def handle_scoreboard():
+
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top N records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
+
     # --- Main corridor command loop ---
     while True:
         command = input("\n> ").strip().lower()
@@ -139,6 +176,15 @@ def enterCorridor(state, saveName, time_played, startTime):
 
         elif command == "?":
             handle_help()
+
+        elif command == "pause":
+            handle_pause()
+
+        elif command == "status":
+            handle_status()
+
+        elif command == "scoreboard":
+            handle_scoreboard()
 
         elif command.startswith("go "):
             room = command[3:].strip()
@@ -150,8 +196,6 @@ def enterCorridor(state, saveName, time_played, startTime):
             print("👋 You leave the school and the adventure comes to an end. Game over.")
             sys.exit()
 
-        elif command == "pause":
-            handle_pause(state, saveName, time_played, startTime)
 
         else:
             print("❓ Unknown command. Type '?' to see available commands.")
