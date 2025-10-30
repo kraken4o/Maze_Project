@@ -61,6 +61,10 @@ def enterStorageroom(state, saveName, time_played, startTime):
         print("- ?                   : Show this help message.")
         print("- quit                : Quit the game entirely.")
         print("- pause                : Pause the game.")
+        print("- status               : Show the status of the game.")
+        print("- scoreboard            : Shows top 5 scores")
+        print(f"- current inventory    : {state['inventory']} ")
+
     #command 'look inside'
     def handle_open(where):
         if where == "inside":
@@ -106,16 +110,16 @@ def enterStorageroom(state, saveName, time_played, startTime):
             print("You think its about to explode so you quickly exit the room.")
             return "corridor"
 
-    def handle_pause(state, saveName, time_played, startTime):
-        # state: the dictionary storing current room, previous room, inventory, and visited rooms
-        #saveName: the name of the save file (or "no save" if it's a new game)
-        #time_played: total time played in previous sessions (in seconds)
-        elapsed_time = (t.time() - startTime) + time_played
-        flag = True
+    def handle_pause():
+
+        # --- Calculate how long the player has been playing for ---
+        # Combine saved play time with current session duration
+        percentComplete, elapsed_time = handle_status()
+
         conn = sqlite3.connect("GameSave.db")
         cur = conn.cursor()
 
-        # collect relavant IDs of the rooms in the current game file being played
+        # collect relevant IDs of the rooms in the current game file being played
         cur.execute("""SELECT roomId FROM Rooms WHERE roomName = ?""", (state["current_room"],))
         currentId = cur.fetchone()[0]
 
@@ -130,9 +134,10 @@ def enterStorageroom(state, saveName, time_played, startTime):
 
             #  if there is already a saveID that has the current save name it updates the rooms and time played
             cur.execute(
-                "UPDATE Saves SET currentId = ?, previousId = ?, time = ? WHERE saveId = ?",
-                (currentId, previousId, float(elapsed_time), saveId)
+                "UPDATE Saves SET currentId = ?, previousId = ?, time = ?, completion = ? WHERE saveId = ?",
+                (currentId, previousId, float(elapsed_time), float(percentComplete) , saveId)
             )
+
 
             # deletes all room states for a save id and iterates through the state of each room and adds it back in
             cur.execute("DELETE FROM SaveRoomState WHERE saveId = ?", (saveId,))
@@ -160,8 +165,8 @@ def enterStorageroom(state, saveName, time_played, startTime):
         else:
             # If it doesn't exist, create a new one with that name
             cur.execute(
-                "INSERT INTO Saves (saveName, currentId, previousId, time) VALUES (?, ?, ?, ?)",
-                (saveName, currentId, previousId, float(elapsed_time))
+                "INSERT INTO Saves (saveName, currentId, previousId, time, completion) VALUES (?, ?, ?, ?, ?)",
+                (saveName, currentId, previousId, float(elapsed_time), float(percentComplete))
             )
             save_id = cur.lastrowid
 
@@ -185,12 +190,53 @@ def enterStorageroom(state, saveName, time_played, startTime):
                         (save_id, i[0])
                     )
 
+
+
+
         # --- Commit changes to the database ---
         conn.commit()
         print(f"💾 Save '{saveName}' updated successfully!")
         print(f"Total playtime: {elapsed_time:.2f} seconds.")
         conn.close()
         sys.exit()
+
+
+    def handle_status():
+
+        elapsed_time = (t.time() - startTime) + time_played
+        completed = 0
+        totalgame = 0
+        for i in state["visited"]:
+            totalgame += 1
+            if state["visited"][i] == True:
+                completed += 1
+        percentplayed = completed / totalgame * 100
+        print(saveName, ":")
+        print(f"you have completed {percentplayed:.1f}% of the game")
+        print("time played:", elapsed_time)
+        return percentplayed, elapsed_time
+
+
+    def handle_scoreboard():
+
+
+        conn = sqlite3.connect("GameSave.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT saveName, time, completion FROM saves")
+        completionList = cur.fetchall()
+
+        sorted_records = sorted(completionList, key=lambda x: (-x[2], x[1]))
+
+        # Get top n records
+        top_scores = sorted_records[:5]
+
+        # Print results
+        print("Top Scores:")
+        for name, time, percent in top_scores:
+            print(f"Name: {name}, Time: {time}, Percent: {percent}%")
+
+
 
 # --- Commandoloop ---
     while True:
@@ -201,6 +247,12 @@ def enterStorageroom(state, saveName, time_played, startTime):
 
         elif command == "?":
             handle_help()
+
+        elif command == "scoreboard":
+            handle_scoreboard()
+
+        elif command == "status":
+            handle_status()
 
         elif command.startswith("look "):
             where = command[5:].strip()
@@ -223,7 +275,7 @@ def enterStorageroom(state, saveName, time_played, startTime):
             sys.exit()
 
         elif command == "pause":
-            handle_pause(state, saveName, time_played, startTime)
+            handle_pause()
 
 
         else:
