@@ -95,7 +95,7 @@ def enterClassroom2015(state, saveName,time_played,startTime):
                 completed += 1
         percentplayed = completed / totalgame * 100
         print(saveName, ":")
-        print(f"you have completed {percentplayed:.1f}% of the gate")
+        print(f"you have completed {percentplayed:.1f}% of the game")
         print("time played:", elapsed_time)
         return percentplayed, elapsed_time
 

@@ -118,7 +118,7 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
                 completed += 1
         percentplayed = completed / totalgame * 100
         print(saveName, ":")
-        print(f"you have completed {percentplayed:.1f}% of the gate")
+        print(f"you have completed {percentplayed:.1f}% of the game")
         print("time played:", elapsed_time)
         return percentplayed, elapsed_time
 
@@ -251,7 +251,7 @@ def enterEquinoxroom(state, saveName, time_played, startTime):
             #makes intersection, checks how much of the items match and turns that to int
             correct_count = len(state["chosen_items"] & correct_items)
 
-            # if 3 out of 3 items are correct- puzzle solved
+            # if 3 out of 3 items are correct puzzle solved
             if correct_count == 3:
                 print("🎉 The big boy shouts: 'Finally, you picked the right snacks and passed the test!'")
                 print("Officially you are the new member of Equinox")
