@@ -53,6 +53,7 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
             print("- answer <fruit>      : Solve the riddle about the fruit.")
         print("- go corridor / back  : Leave the room and return to the corridor.")
         print("- ?                   : Show this help message.")
+        print("- talk to             : Talk to people in the room")
         print("- quit                : Quit the game completely.")
         print("- pause                : Pause the game.")
         print("- status              : Show the status of the game.")
@@ -85,6 +86,15 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
 
             handle_pause()
             handle_scoreboard()
+
+    def handle_talk(person):
+        if not state["visited"]["projectroom3"]:
+            if person in ["students","the students","people","group"]:
+                print("Hey, I see that you completed almost all rooms!")
+                print("That's amazing!")
+                print("We are still working on our project")
+            else:
+                print(f"There is no {person} in this room to talk to")
 
 
     def handle_pause():
@@ -182,7 +192,7 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
                 completed += 1
         percentplayed = completed / totalgame * 100
         print(saveName, ":")
-        print("you have completed " + str(percentplayed) + "% of the gate")
+        print(f"you have completed {percentplayed:.1f}% of the gate")
         print("time played:", elapsed_time)
         return percentplayed, elapsed_time
 
@@ -226,6 +236,18 @@ def enterProjectRoom3(state, saveName, time_played, startTime):
 
         elif command == "scoreboard":
             handle_scoreboard()
+
+        elif command.startswith("talk to "):
+            destination=command[8:].strip()
+            result=handle_talk(destination)
+            if result:
+                return result
+
+        elif command.startswith("talk "):
+            destination=command[5:].strip()
+            result=handle_talk(destination)
+            if result:
+                return result
 
         elif command.startswith("go "):
             destination = command[3:].strip()
